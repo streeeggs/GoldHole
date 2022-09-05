@@ -62,6 +62,7 @@ _Still WIP. Without using the exact DB I'm using which is currently an Atlas Clu
 # ToDo in order of importance
 
 - [ ] Connection Caching
+- [ ] Fix UI build size (324.4kB JS chunk and 299.4kB CSS chunk)
 - [ ] 💸Stocks view💸
 - [ ] API Result Caching
 - [ ] API Auth
