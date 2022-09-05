@@ -341,6 +341,3 @@ def videos_top():
 def videos_history(name):
     pipeline = video_history_aggregate + [{"$match": { "Title": name }}] + [{"$sort": { "_id.date": 1}}]
     return dumps(mongo.db.videos.aggregate(pipeline))
-
-if __name__ == "__main__":
-    app.run()

@@ -61,8 +61,9 @@ _Still WIP. Without using the exact DB I'm using which is currently an Atlas Clu
 
 # ToDo in order of importance
 
-- [~] 💸Stocks view💸
-- [ ] API Caching
+- [ ] Connection Caching
+- [ ] 💸Stocks view💸
+- [ ] API Result Caching
 - [ ] API Auth
 - [ ] Retention policy on log files
 - [ ] Unit tests
