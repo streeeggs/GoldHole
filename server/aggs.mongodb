@@ -1,0 +1,319 @@
+// MongoDB Playground
+// To disable this template go to Settings | MongoDB | Use Default Template For Playground.
+// Make sure you are connected to enable completions and to be able to run a playground.
+// Use Ctrl+Space inside a snippet or a string literal to trigger completions.
+
+// Select the database to use.
+use('gold_hole');
+
+
+/*
+  SELECT TOP 1 Title, Text, COUNT(*)
+  FROM Videos
+  GROUP BY Title, Text
+  ORDER BY 3 DESC
+*/
+const aggregation = [
+    {
+      $group: {
+        "_id": {
+          "__alias_0": "$title",
+          "__alias_1": "$message.text"
+        },
+        "__alias_2": {
+          "$sum": {
+            "$cond": [
+              {
+                "$ne": [
+                  {
+                    "$type": "$message.text"
+                  },
+                  "missing"
+                ]
+              }, 1,0]
+          }
+        }
+      }
+    },
+    {
+      $project: {
+        "_id": 0,
+        "__alias_0": "$_id.__alias_0",
+        "__alias_1": "$_id.__alias_1",
+        "__alias_2": 1
+      }
+    },
+    {
+      $project: {
+        "value": "$__alias_2",
+        "group": "$__alias_0",
+        "group_series_0": "$__alias_1",
+        "_id": 0
+      }
+    },
+    {
+      $sort: {
+        "value": -1
+      }
+    },
+    {
+      $limit: 50000
+    },
+  ];
+
+//db.videos.aggregate(aggregation);
+
+
+var count_by_title_aggregate = [
+    {
+      "$group": {
+        "_id": {
+          "title": "$title",
+          "text": { "$toLower": "$message.text" }
+        },
+        "count": {
+          "$sum": {
+            "$cond": [
+              {
+                "$ne": [
+                  {
+                    "$type": "$message.text"
+                  },
+                  "missing"
+                ]
+              }, 1,0]
+          }
+        }
+      }
+    },
+    {
+       "$group": {
+          "_id": "$_id.title",
+          "out": { "$sum": "$count" }
+       }
+    },
+    {
+       "$project": {
+          "Title": "$_id",
+          "Count": "$out"
+       }
+    },
+    {
+       "$sort": { "Count": -1, "Title": 1 }
+    }
+ ]
+
+db.videos.aggregate(count_by_title_aggregate);
+
+var first_said_by_aggregate = [
+  {
+    "$match": { "name": { "$not": { "$regex": /^streeegg.*/ } } }
+  },
+  {      
+    "$group": {
+        "_id": {
+          "title": "$title",
+          "text": "$message.text",
+          "name": "$name"
+        },
+        "minDate": { "$min" : "$message.time"  }
+      },
+  },
+  { 
+    "$sort": { "minDate" : 1 }
+  },
+  {
+    "$group": {
+      "_id": "$_id.text",
+      "out": { "$first": "$$ROOT" }
+    }
+  },
+  {
+    "$project": {
+      "Name": "$out._id.name",
+      "Text": "$out._id.text",
+      "Title": "$out._id.title",
+      "Date": { "$dateToString": { format: "%Y-%m-%d %H:%M:%S", date: "$out.minDate"} }
+    }
+  },
+  { "$match": {"Name": "BlankPage"} }
+]
+
+//db.users.aggregate(first_said_by_aggregate)
+
+var by_golds = [
+  {      
+    "$group": {
+        "_id": {
+          "title": "$title",
+          "text": "$message.text"
+        },
+        "agg": { "$addToSet" : "$title"  }
+      },
+  },
+  {
+    "$sortByCount": "$_id.title"
+  },
+  {
+      "$project": {
+        "Title": "$_id",
+        "Count": "$count"
+      }
+  },
+  {
+      "$sort": { "Count": -1, "Title": 1}
+  }
+]
+
+//db.videos.aggregate(by_golds)
+
+var sum_echo_by_title_aggregate = [
+    {
+      "$group": {
+        "_id": {
+          "title": "$title",
+          "text": "$message.text"
+        },
+        "count": {
+          "$sum": {
+            "$cond": [
+              {
+                "$ne": [
+                  {
+                    "$type": "$message.text"
+                  },
+                  "missing"
+                ]
+              }, 1,0]
+          }
+        }
+      }
+    },
+    {
+       "$group": {
+          "_id": "$_id.title",
+          "out": { "$sum": "$count" }
+       }
+    },
+    {
+       "$project": {
+          "Title": "$_id",
+          "Count": "$out"
+       }
+    },
+    {
+       "$sort": { "Count": -1, "Title": 1 }
+    },
+ ]
+
+var sum_echo_by_message_aggregate = [
+    {
+      "$group": {
+        "_id": {
+          "text": "$message.text"
+        },
+        "count": {
+          "$sum": {
+            "$cond": [
+              {
+                "$ne": [
+                  {
+                    "$type": "$message.text"
+                  },
+                  "missing"
+                ]
+              }, 1,0]
+          }
+        }
+      }
+    },
+    {
+       "$group": {
+          "_id": "$_id.text",
+          "out": { "$sum": "$count" }
+       }
+    },
+    {
+       "$project": {
+          "Message": "$_id",
+          "Count": "$out"
+       }
+    },
+    {
+       "$sort": { "Count": -1, "Message": 1 }
+    },
+ ]
+
+
+ //db.users.aggregate(sum_echo_by_message_aggregate)
+
+
+ var discovery =  [
+  {      
+    "$group": {
+        "_id": {
+          "title": "$title",
+          "text": "$message.text",
+        },
+        "minDate": { "$min" : "$message.time"  }
+      },
+  },
+  { 
+    "$sort": { "minDate" : 1 }
+  },
+  {
+    "$group": {
+      "_id": "$_id.text",
+      "out": { "$first": "$$ROOT" }
+    }
+  },
+  {
+    "$project": {
+      "Text": "$out._id.text",
+      "Title": "$out._id.title",
+      "Date": { "$dateToString": { format: "%Y-%m-%d %H:%M:%S", date: "$out.minDate"} }
+    }
+  },
+]
+
+//db.videos.aggregate(discovery)
+
+var timeline = [
+  {
+    "$group":
+    {
+      "_id": {
+        "title": "$title",
+        "message": "$message.text"
+      },
+      "minDate": { "$min": "$message.time" }
+    }
+  },
+  { 
+    "$group": { 
+      "_id": {
+        "title": "$_id.title",
+        "date": { "$dateToString": { "format": "%Y-%m-%d %H", "date": "$minDate"} }
+      },
+      "count": { "$sum": 1 } 
+    } 
+  },
+    {
+      "$project": {
+        "Title": "$_id.title",
+        "Date": "$date",
+        "Count": "$count"
+      }
+  },
+  { 
+    "$sort": { "_id.date": -1} 
+  }
+]
+
+//db.videos.aggregate(timeline)
+
+//db.videos.find().limit(1).sort({"message.time": -1})
+
+// db.users.updateMany({}, 
+// [{ "$set": { "message.time": { "$toDate": "$message.time"}}}]
+// )
