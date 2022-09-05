@@ -10,15 +10,10 @@ from markupsafe import escape
 
 import pprint
 import os
-import configparser
 import json
 
-config = configparser.ConfigParser()
-config.read(os.path.abspath(os.path.join(".ini")))
-
 app = Flask(__name__)
-app.config["DEBUG"] = True
-app.config["MONGO_URI"] = config["PROD"]["GH_URI"]
+app.config["MONGO_URI"] = os.environ["GH_CONN_STR"]
 CORS(app, resources={r'/*': {'origins': '*'}})
 mongo = PyMongo(app)
 
