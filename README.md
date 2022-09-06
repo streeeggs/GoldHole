@@ -65,13 +65,13 @@ _Still WIP. Without using the exact DB I'm using which is currently an Atlas Clu
 - [ ] Fix UI build size (324.4kB JS chunk and 299.4kB CSS chunk)
 - [ ] 💸Stocks view💸
 - [ ] API Result Caching
-- [ ] API Auth
+- [ ] API Authentication
 - [ ] Retention policy on log files
 - [ ] Unit tests
 - [ ] Mock data
-- [ ] Style nav
+- [ ] Style navbar
 - [ ] Style graphs on load
 - [ ] Style layout
 - [ ] Style style style
-- [ ] Organize UI mapping and utils
+- [ ] Organize UI mapping and utilities
 - [ ] Organize API aggregates better
