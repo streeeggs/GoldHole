@@ -6,7 +6,7 @@
     "serve": "vue-cli-service serve",
     "build": "vue-cli-service build",
     "lint": "vue-cli-service lint",
-    "start": "vue-cli-service build && serve -s dist"
+    "start": "serve -s dist"
   },
   "dependencies": {
     "chart.js": "^3.8.0",
