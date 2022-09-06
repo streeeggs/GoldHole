@@ -121,9 +121,6 @@ def get_gold(lottery_js):
         name_gold = page.locator("#messagebuffer div:has(.text-lottery) >> .username")
         #white_hunting = page.locator("#messagebuffer span")
 
-        # Even with login, still cant get usually JS
-        page.evaluate(lottery_js)
-
         title = page.locator("#currenttitle-content")
         
         unique_golds_by_user, unique_golds_global = set(), set()
@@ -214,14 +211,10 @@ if __name__ == "__main__":
         page = browser.new_page()
         page.goto(URL, timeout=300000)
 
-        # Login for channel JS and CSS
-        page.fill("#username", "gold_minor")
-        page.fill("#password", "Password1")
-        page.click("#login")
-
         script_prompt = page.locator("#chanjs-allow")
-        # Please let me get the gold script... please
         script_prompt.click()
+        # Please let me get the gold script... please
+        page.evaluate(lottery_js)
         
         while target_time > datetime.now():
 
