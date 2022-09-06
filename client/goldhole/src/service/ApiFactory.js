@@ -1,7 +1,5 @@
-const API_URL = process.env.API_URL;
-
 export default class ApiFactory {
   constructor(route) {
-    return fetch(API_URL + route);
+    return fetch(process.env.VUE_APP_API_URL + route);
   }
 }
