@@ -6,67 +6,21 @@ Parse coolhole and look at shit
 
 ## WebScraper
 
-## API
-
 ## UI
 
-# Setup
-
-_Still WIP. Without using the exact DB I'm using which is currently an Atlas Cluster_
-
-## UI
-
-- Follow readme
-
-## DB
-
-- Still in TODO
-- If you want to give it a go, setup a DB with the name `gold_hole` and collections `users` and `videos`
-- `users` schema:
-
-```json
-{
-  "_id": { "$oid": "objectID" },
-  "title": "Title",
-  "name": "Name",
-  "message": {
-    "time": { "$date": { "$numberLong": "1111111111111" } },
-    "text": "text"
-  }
-}
-```
-
-- `videos` schema:
-
-```json
-{
-  "_id": { "$oid": "objectID" },
-  "title": "Title",
-  "message": {
-    "time": { "$date": { "$numberLong": "1111111111111" } },
-    "text": "text"
-  }
-}
-```
-
-## API
-
-- Create an `.ini` file based on the sample provided for the mongoDb conn string
-- `python app.py`
-
-## WebScraper
-
-- Create an `.ini` file based on the sample provided for the mongoDb conn string
-- `python get_gold.py`
+## API / DB
 
 # ToDo in order of importance
 
-- [ ] Connection Caching
+- [ ] DB Connection Caching
+- [ ] Retention policy on scrapped log files
+- [ ] Setup automated task for web scraper
 - [ ] Fix UI build size (324.4kB JS chunk and 299.4kB CSS chunk)
 - [ ] 💸Stocks view💸
-- [ ] API Result Caching
+- [ ] [WordCloud](https://github.com/sgratzl/chartjs-chart-wordcloud)
+- [ ] API Caching
+- [ ] UI Caching
 - [ ] API Authentication
-- [ ] Retention policy on log files
 - [ ] Unit tests
 - [ ] Mock data
 - [ ] Style navbar
