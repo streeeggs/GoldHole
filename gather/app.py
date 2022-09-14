@@ -8,17 +8,16 @@ import traceback
 from datetime import datetime, timedelta, date
 from os.path import exists
 from playwright.sync_api import sync_playwright
+from dotenv import load_dotenv
 
 from cool_js import cool_js
 from merge_data import merge_all_logs
 
-# Test
-#URL =  "https://coolhole.org/r/test"
+load_dotenv()
 
-# Prod
-URL = "https://coolhole.org/"
+URL = os.environ["GH_URL"]
 
-TIME_TILL_KILL = 12
+TIME_TILL_KILL = int(os.environ["GH_TTK"])
 
 # FIXME: Custom JS needs to be loaded in. Logging in does nothing. Need to diagnose. Could try:
 # 1. Waiting for chanjs to load (may never happen if websocket fucks off)
@@ -166,16 +165,20 @@ def get_gold(lottery_js):
         gold_list = list()
         # Start from the last gold message and remove on the way up to keep the "i-th" ordering in place
         for i in reversed(range(count)):
-            try:
-                html = whole_gold.nth(i).evaluate("el => el.outerHTML")
-                whole_gold.nth(i).evaluate("el => el.remove()")
-                gold_list.append(parseUserMessage(html))
-            except Exception:
-                # ignore... usually timeout related and worth giving it another try next round
-                print(f"Exception while gather inner html for {i}th element")
-                print("-"*60)
-                traceback.print_exc()
-                print("-"*60)
+            # We can put the gold class on messages that become gold. That means the message will be null
+            if whole_gold.nth(i).text_content() and whole_gold.nth(i).text_content().strip():
+                try:
+                    html = whole_gold.nth(i).evaluate("el => el.outerHTML")
+                    whole_gold.nth(i).evaluate("el => el.remove()")
+                    parsed_message = parseUserMessage(html)
+                    if parsed_message:
+                        gold_list.append(parsed_message)
+                except Exception:
+                    # ignore... usually timeout related and worth giving it another try next round
+                    print(f"Exception while gather inner html for {i}th element")
+                    print("-"*60)
+                    traceback.print_exc()
+                    print("-"*60)
                 
         # gold: (timestamp, username, message) 
         for gold in gold_list:
@@ -221,7 +224,7 @@ if __name__ == "__main__":
             # Need to pass lottery_js since websocket isn't sending it over
             res = get_gold(lottery_js) # returns (user_array, video_array, title_text_origin)
 
-            # Create json file after video is over to perserve data in the event of a failure and reduce memory pressure
+            # Create json file after video is over to preserve data in the event of a failure and reduce memory pressure
             if res:
                 td = target_time - datetime.now()
                 days, hours, minutes = td.days, td.seconds//3600, (td.seconds//60)%60

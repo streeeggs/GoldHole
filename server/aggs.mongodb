@@ -310,9 +310,15 @@ var timeline = [
   }
 ]
 
-//db.videos.aggregate(timeline)
+//db.videos.aggregate(timeline) 
+//db.videos.find({"message.time": {"$gt": ISODate("2022-09-08T23:00:00.000Z")}})
 
-//db.videos.find().limit(1).sort({"message.time": -1})
+// db.runCommand(
+//   {
+//     delete: "users",
+//     deletes: [{ q: {"message.time": {"$gt": ISODate("2022-09-08T23:00:00.000Z")}, "title": "MY SON HUNTER"}, limit: 0}]
+//   }
+// )
 
 // db.users.updateMany({}, 
 // [{ "$set": { "message.time": { "$toDate": "$message.time"}}}]

@@ -5,13 +5,15 @@ from flask_pymongo import PyMongo
 from datetime import datetime, timedelta
 from flask_cors import CORS
 from collections import Counter
-import pandas as pd
+from dotenv import load_dotenv
 from markupsafe import escape
 
+import pandas as pd
 import pprint
 import os
 import json
 
+load_dotenv()
 app = Flask(__name__)
 app.config["MONGO_URI"] = os.environ["GH_CONN_STR"]
 CORS(app, resources={r'/*': {'origins': '*'}})

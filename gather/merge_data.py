@@ -14,7 +14,7 @@ from mongo_util import get_database
 # One file for users; one for "all" (title + date)
 def merge_all_logs():
     # FIXME: AHHHHHHHH PATHS
-    path = 'C:\\Users\\Botnet2\\Desktop\\Skript Kiddy\\LookAtThisGraph\\gather\\golden_hole\\logs'
+    path = os.getcwd() + "/logs"
 
     # Each date
     for root_path, dirs, files in os.walk(path):
