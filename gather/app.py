@@ -165,21 +165,21 @@ def get_gold(lottery_js):
         gold_list = list()
         # Start from the last gold message and remove on the way up to keep the "i-th" ordering in place
         for i in reversed(range(count)):
-            # We can put the gold class on messages that become gold. That means the message will be null
-            if whole_gold.nth(i).text_content() and whole_gold.nth(i).text_content().strip():
-                try:
+            # We can put the gold class on emotes that are flagged as gold and then replaced with an image. That means the message will be empty and breaks shit
+            try:
+                if whole_gold.nth(i).text_content() and whole_gold.nth(i).text_content().strip():
                     html = whole_gold.nth(i).evaluate("el => el.outerHTML")
                     whole_gold.nth(i).evaluate("el => el.remove()")
                     parsed_message = parseUserMessage(html)
                     if parsed_message:
                         gold_list.append(parsed_message)
-                except Exception:
-                    # ignore... usually timeout related and worth giving it another try next round
-                    print(f"Exception while gather inner html for {i}th element")
-                    print("-"*60)
-                    traceback.print_exc()
-                    print("-"*60)
-                
+            except Exception:
+                # ignore... usually timeout related and worth giving it another try next round
+                print(f"Exception while gather inner html for {i}th element")
+                print("-"*60)
+                traceback.print_exc()
+                print("-"*60)
+            
         # gold: (timestamp, username, message) 
         for gold in gold_list:
             # FIXME: Intention was to use sets to avoid duplciates. 

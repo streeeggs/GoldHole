@@ -2,10 +2,13 @@ from datetime import date, datetime
 import os
 import json
 import pprint
+import shutil
 
 from mongo_util import get_database
 
 # FIXME: THIS WHOLE THING SUCKS SHIT
+# FIXME: AHHHHHHHH PATHS
+path = os.getcwd() + "/logs"
 
 # Dunno if this is the most efficient approach but also don't care
 # https://stackoverflow.com/questions/57422734/how-to-merge-multiple-json-files-into-one-file-in-python
@@ -13,9 +16,6 @@ from mongo_util import get_database
 # Creates two files with the "_MERGE.json" file name on each date sub-folder that merges all files together.
 # One file for users; one for "all" (title + date)
 def merge_all_logs():
-    # FIXME: AHHHHHHHH PATHS
-    path = os.getcwd() + "/logs"
-
     # Each date
     for root_path, dirs, files in os.walk(path):
         # Verbose names are all you can think of past 11PM
@@ -83,3 +83,9 @@ def updateGoldCollections(list_of_gold_by_title, list_of_gold_by_user):
     if(filtered_user):
         users.insert_many(filtered_user)
         print(f"Finished inserting user records into collection for {filtered_user[0]}")
+
+def pergeLogs():
+    try:
+        shutil.rmtree(path)
+    except OSError as e:
+        print("Error purging files: %s : %s" % (path, e.strerror))

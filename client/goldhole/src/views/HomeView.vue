@@ -238,7 +238,7 @@ export default {
       to(#222),
       color-stop(0.9, #fff)
     ) 0 0 no-repeat;
-  animation: shine 4s infinite;
+  animation: shine 15s infinite;
   background-size: 150px;
   color: rgba(205, 175, 20, 0.4);
   background-clip: text;
