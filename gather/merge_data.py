@@ -22,7 +22,6 @@ def merge_all_logs():
         list_of_all_files, list_of_user_files = list(), list()
 
         # Sub-dirs only
-        # TODO: Either get rid of old files or ignore previous uploaded dirs
         if path != root_path:
             # Each file for that day
             for file in files:

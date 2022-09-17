@@ -11,7 +11,7 @@ from playwright.sync_api import sync_playwright
 from dotenv import load_dotenv
 
 from cool_js import cool_js
-from merge_data import merge_all_logs
+from merge_data import merge_all_logs, pergeLogs
 
 load_dotenv()
 
@@ -244,4 +244,5 @@ if __name__ == "__main__":
         browser.close()
         
         merge_all_logs()
+        pergeLogs()
         print("Done")

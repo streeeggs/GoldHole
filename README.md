@@ -19,7 +19,7 @@ Parse coolhole and look at shit
 # ToDo in order of importance
 
 - [x] Retention policy on scrapped log files
-- [ ] Setup automated task for web scraper
+- [x] Setup automated task for web scraper (nearly)
 - [ ] Fix UI build size (324.4kB JS chunk and 299.4kB CSS chunk)
 - [ ] Make monthly leader boards
 - [ ] 💸Stocks view💸
