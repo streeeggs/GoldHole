@@ -9,8 +9,10 @@ Parse coolhole and look at shit
 - Uses playwright
 - Grabs data
 - Places into two sets (one based on videos and one based on users). Basically useless but whatever.
-- Saves the data after each video to `/logs/**Title Of Video**_all.json` and `/logs/**Title Of Video**_users.json`
--
+- Saves the data after each video to `/logs/**Title Of Video**_all.json` and `/logs/**Title Of Video**_users.json` OR if we pass midnight (relic of old code that inferred the date based on the file it was in)
+- After the time allotted it up, merge all files into a two "merge" file/day/user or video (again pointless)
+- For each of those files, check the latest uploaded date in their respective DB (unnecessary to do multiple times), and insert the files into the two DB
+- Purge all the log files
 
 ## UI
 

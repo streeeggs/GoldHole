@@ -41,7 +41,7 @@ def buildFiles(results):
     title = str(''.join(c for c in raw_title if c in valid_chars))
     
     # ick; path requirement
-    path = "logs/" + str(date.today())
+    path = os.getcwd() + "/logs" + str(date.today())
     if not os.path.exists(path):
         os.makedirs(path)
 
