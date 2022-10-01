@@ -23,10 +23,10 @@ Parse coolhole and look at shit
 - [x] Retention policy on scrapped log files
 - [x] Setup automated task for web scraper (nearly)
 - [ ] Fix UI build size (324.4kB JS chunk and 299.4kB CSS chunk)
-- [ ] Make monthly leader boards
+- [ ] Make binned winners (week, month, year, all time)
 - [ ] 💸Stocks view💸
 - [ ] [WordCloud](https://github.com/sgratzl/chartjs-chart-wordcloud)
-- [ ] Parse gold emojis
+- [ ] Parse "gold emojis" (blank)
 - [x] API Caching
 - [ ] UI Caching
 - [ ] API Authentication

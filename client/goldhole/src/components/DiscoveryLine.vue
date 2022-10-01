@@ -1,7 +1,6 @@
 <template>
   <v-card class="pa-6 rounded-sm mx-12 my-12">
-    <v-card-title v-text="title"> </v-card-title>
-
+    <v-card-title v-text="title" />
     <v-select
       v-model="videoHistorySelection.item"
       :items="items"

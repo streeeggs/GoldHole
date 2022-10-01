@@ -1,8 +1,3 @@
-// MongoDB Playground
-// To disable this template go to Settings | MongoDB | Use Default Template For Playground.
-// Make sure you are connected to enable completions and to be able to run a playground.
-// Use Ctrl+Space inside a snippet or a string literal to trigger completions.
-
 // Select the database to use.
 use('gold_hole');
 
@@ -103,7 +98,7 @@ var count_by_title_aggregate = [
     }
  ]
 
-db.videos.aggregate(count_by_title_aggregate);
+//db.videos.aggregate(count_by_title_aggregate);
 
 var first_said_by_aggregate = [
   {
@@ -323,3 +318,422 @@ var timeline = [
 // db.users.updateMany({}, 
 // [{ "$set": { "message.time": { "$toDate": "$message.time"}}}]
 // )
+
+
+var echo_message_by_date = [
+    //...first_said, 
+    {      
+      "$group": {
+          "_id": {
+              "text": { "$toLower": "$message.text" },
+              "name": "$name"
+          },
+          "minDate": { "$min" : "$message.time"  }
+      },
+    },
+    { 
+        "$sort": { "minDate" : 1, "_id.name": 1 }
+    },
+    {
+        "$group": {
+            "_id": "$_id.text",
+            "out": { "$first": "$$ROOT" }
+        }
+    },
+    {
+      "$project": {
+        "name": "$out._id.name",
+        "date": "$out.minDate",
+        "text": "$out._id.text"
+      }
+    },
+    {
+      "$group": {
+        "_id": {
+          "user": "$name",
+          "month": { "$dateToString": { format: "%Y-%m", date: "$date" } },
+        },
+        "items": {
+            $push: "$text" 
+        },
+      }
+    },
+    {
+      "$project": {
+        "user": "$_id.user",
+        "month": "$_id.month",
+        "items": { "$setUnion": [ "$items", "$items" ] },
+      }
+    },
+    {
+      "$project": {
+        "user": "$_id.user",
+        "month": "$_id.month",
+        "items": "$items",
+        "count": { "$size": "$items" },
+      }
+    },
+    { 
+        "$sort": { "count" : -1, "user": 1 }
+    },
+ ]
+
+ //db.users.aggregate(echo_message_by_date)
+
+ var first_said = [
+  {      
+    "$group": {
+        "_id": {
+            "text": { "$toLower": "$message.text" },
+            "name": "$name"
+        },
+        "minDate": { "$min" : "$message.time"  }
+    },
+  },
+  { 
+      "$sort": { "minDate" : 1, "_id.name": 1 }
+  },
+  {
+      "$group": {
+          "_id": "$_id.text",
+          "out": { "$first": "$$ROOT" }
+      }
+  },
+  {
+    "$project": {
+      "name": "$out._id.name",
+      "date": "$out.minDate",
+      "text": "$out._id.text"
+    }
+  }
+]
+
+//db.users.aggregate(first_said)
+
+// var echo_message_test = [
+// {
+//   "$group": {
+//     "_id": {
+//       "name": "$name"
+//     }
+//   }
+// },
+// {
+//   "$project": {
+//     "name": "$_id.name"
+//   }
+// },
+//   {
+//     "$lookup":
+//       {
+//         from: "users",
+//         let: { name: "$name"},
+//         pipeline: [...first_said, 
+//             { 
+//               "$match":
+//                 { "$expr":
+//                   { "$and":
+//                       [
+//                         { "$eq": [ "$name",  "$$name" ] }
+//                       ]
+//                   }
+//                 }
+//             },
+//             {
+//               "$project": {
+//                 "message": "$text",
+//                 "first_date": "$date"
+//               }
+//             },
+//             {
+//             "$lookup":
+//               {
+//                 from: "users",
+//                 let: { message: "$message.text"},
+//                 pipeline: [
+//                   {
+//                     "$group":
+//                     {
+//                       "_id": {
+//                         "title": "$title",
+//                         "message": "$message.text",
+//                         "name": "$name"
+//                       },
+//                       "minDate": { "$min": "$message.time" }
+//                     }
+//                   },
+//                   {
+//                     "$group":
+//                     {
+//                       "_id": {
+//                         "message": "$_id.message"
+//                       },
+//                       "allDatesSaidUniqueToUserAndTitle": {"$push": "$minDate" }
+//                     }
+//                   },
+//                   {
+//                     "$addFields": {"totalEcho": {"$size": "$allDatesSaidUniqueToUserAndTitle" }}
+//                   },
+//                   { 
+//                     "$match": { "$eq": [ "$_id.message",  "$$message" ] }
+//                   }
+//                 ],
+//               as: "echos"
+//               },
+//         ],
+//         as: "message"
+//       },
+//   }
+//   // {
+//   //   "$group": {
+//   //     "_id": {
+//   //       "name": "$name",
+//   //     },
+//   //     "message": {"$push": { "text": "$message.text", "date":"$message.date"}}
+//   //   }
+//   // }
+// // {
+// //   "$lookup":
+// //     {
+// //       from: "users",
+// //       let: { message: { "$toLower": "$message.text" },
+// //       pipeline: [
+// //           {
+// //             "$group": {
+// //               "_id": {
+// //                 "text": { "$toLower": "$message.text" }
+// //               },
+// //               "count": {
+// //                 "$sum": {
+// //                   "$cond": [
+// //                     {
+// //                       "$ne": [
+// //                         {
+// //                           "$type": "$message.text"
+// //                         },
+// //                         "missing"
+// //                       ]
+// //                     }, 1,0]
+// //                 }
+// //               }
+// //             }
+// //           },
+// //           {
+// //             "$group": {
+// //                 "_id": "$_id.text",
+// //                 "out": { "$sum": "$count" }
+// //             }
+// //           },
+// //           { 
+// //             "$match": { 
+// //               "$expr": { 
+// //                 "$eq": 
+// //                 [ "$_id",  "$$message" ] 
+// //                 } 
+// //               }
+// //           },
+// //       ],
+// //       as: "repeated"
+// //     },
+// // },
+// // {
+// //   "$group": {
+// //     "_id": "$name",
+// //     "count": {"$sum": {"$first": "$repeated.out" } }
+// //   }
+// // },
+// // {
+// //   "$project": {
+// //     "name": "$name",
+// //     "date": "$date",
+// //     "text": "$text",
+// //     "count": {"$first": "$repeated.out" }
+// //   }
+// // },
+// // { 
+// //     "$sort": { "count" : -1, "_id": 1 }
+// // }
+// ]
+
+var all_echos_with_date = [
+  {
+    "$group":
+    {
+      "_id": {
+        "title": "$title",
+        "message": { "$toLower": "$message.text" },
+        "name": "$name"
+      },
+      "minDate": { "$min": "$message.time" }
+    }
+  },
+  {
+    "$group":
+    {
+      "_id": {
+        "message": "$_id.message"
+      },
+      "allDatesSaidUniqueToUserAndTitle": {"$push": "$minDate" }
+    }
+  },
+  {
+    "$addFields": {"totalEcho": {"$size": "$allDatesSaidUniqueToUserAndTitle" }}
+  }
+]
+
+var first_said = [
+  {      
+    "$group": {
+        "_id": {
+            "text": { "$toLower": "$message.text" },
+            "name": "$name",
+            "title": "$title"
+        },
+        "minDate": { "$min" : "$message.time"  }
+    },
+  },
+  { 
+      "$sort": { "minDate" : 1, "_id.name": 1 }
+  },
+  {
+      "$group": {
+          "_id": "$_id.text",
+          "out": { "$first": "$$ROOT" }
+      }
+  },
+  {
+    "$project": {
+      "name": "$out._id.name",
+      "date": "$out.minDate",
+      "text": "$out._id.text"
+    }
+  }
+]
+
+var combine = [
+  ...first_said,
+  {
+    "$lookup":{
+      from: "users",
+      let: { message: "$text"},
+      as: "allEchosWithDates",
+      pipeline: [
+        ...all_echos_with_date,
+        { 
+          "$match":
+            { "$expr":
+              { "$and":
+                [
+                  { "$eq": [ "$_id.message",  "$$message" ] }
+                ]
+              }
+            }
+        },
+      ]
+    }
+  },
+  { 
+    "$sort": { "allEchosWithDates.totalEcho" : -1, "name": 1 }
+  },
+]
+
+//db.users.aggregate(combine);
+
+var best_of_the_best = [
+  ...combine,
+  {
+    "$project": {
+      "name": "$name",
+      "count": "$allEchosWithDates.totalEcho"
+    }
+  },
+  {
+    "$unwind": "$count"
+  },
+  {
+    "$group": {
+      "_id":{
+        "name": "$name"
+      },
+      "favor": { "$sum": "$count" }
+    }
+  },
+  { 
+    "$sort": { "favor" : -1, "name": 1 }
+  },
+]
+
+var top = [
+  ...best_of_the_best,
+  { "$limit": 3 },
+  { "$group": { "_id": null, names:{$push:"$_id.name"} } },
+  { "$project": {"_id": false, "names": true} }
+]
+
+//db.users.aggregate(top);
+/*
+[
+  {
+    "names": [
+      "BlankPage",
+      "Gutmatant",
+      "aSoapyoid"
+    ]
+  }
+]
+*/
+
+var bin = "%Y-%m-%d %H:%M"
+var dateFrom = "2018-05-16T00:00:00Z"
+var dateTo = new Date(new Date(new Date().getFullYear(), 12, 1) - 1).toISOString()
+var top_users = ["BlankPage", "Gutmatant", "aSoapyoid"]
+
+var best_binned = [
+  ...combine,
+  { "$match": { "$expr": { "$in": [ "$name", ["BlankPage", "Gutmatant", "aSoapyoid"] ] } } },
+  { "$unwind": "$allEchosWithDates" },
+  { "$unwind": "$allEchosWithDates.allDatesSaidUniqueToUserAndTitle" },
+  { "$match": {"allEchosWithDates.allDatesSaidUniqueToUserAndTitle":{ "$lte": ISODate(dateTo) , "$gte": ISODate(dateFrom)  }}},
+  // { 
+  //   "$group": {
+  //     "_id": {
+  //       "user": "$name",
+  //       "month": {
+  //         "$dateToString": {"format": "%Y-%m-%d %H:%M", "date": "$allEchosWithDates.allDatesSaidUniqueToUserAndTitle"}
+  //         },
+  //     },
+  //     "items": {"$push": "$text"},
+  //   }
+  // },
+  // {
+  //   "$project": {
+  //     "_id": false,
+  //     "user": "$_id.user",
+  //     "month": "$_id.month",
+  //     "count": { "$size": "$items" }
+  //   }
+  // },
+  // { 
+  //   "$sort": { "month" : 1, "count": -1, "name": 1 }
+  // },
+]
+
+db.users.aggregate(best_binned)
+
+
+// var deleteme = [
+//   {
+//     "$group":
+//     {
+//       "_id": {
+//         "title": "$title",
+//         "message": { "$toLower": "$message.text" },
+//         "name": "$name"
+//       },
+//       "minDate": { "$min": "$message.time" }
+//     },
+//   },
+//   {"$match": {"minDate":{ "$lte": ISODate(dateTo) , "$gte": ISODate(dateFrom)  }}}
+// ]
+
+// db.users.aggregate(deleteme)

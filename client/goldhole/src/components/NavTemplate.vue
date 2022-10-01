@@ -73,6 +73,7 @@ export default {
         { title: "Home", icon: "mdi-home", url: "/" },
         { title: "Offenders", icon: "mdi-human-queue", url: "/offenders" },
         { title: "Videos", icon: "mdi-youtube", url: "/videos" },
+        { title: "Stocks", icon: "mdi-finance", url: "/stocks" },
       ],
       right: null,
     };
