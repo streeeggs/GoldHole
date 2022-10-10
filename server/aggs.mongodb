@@ -564,7 +564,7 @@ var all_echos_with_date = [
         "message": { "$toLower": "$message.text" },
         "name": "$name"
       },
-      "minDate": { "$min": "$message.time" }
+      "minDate": "$message.time"
     }
   },
   {
@@ -581,159 +581,114 @@ var all_echos_with_date = [
   }
 ]
 
-var first_said = [
-  {      
-    "$group": {
-        "_id": {
-            "text": { "$toLower": "$message.text" },
-            "name": "$name",
-            "title": "$title"
+var excludeCheaters = [{"$match": {"name": {"$not": {"$regex": "^streeegg"}}}}]
+
+var firstSaid = [
+    ...excludeCheaters,
+    {
+        "$group": {
+            "_id": {
+                "text": {"$toLower": "$message.text"},
+                "name": "$name",
+                "title": "$title",
+            },
+            "minDate": {"$min": "$message.time"},
         },
-        "minDate": { "$min" : "$message.time"  }
     },
-  },
-  { 
-      "$sort": { "minDate" : 1, "_id.name": 1 }
-  },
-  {
-      "$group": {
-          "_id": "$_id.text",
-          "out": { "$first": "$$ROOT" }
-      }
-  },
-  {
-    "$project": {
-      "name": "$out._id.name",
-      "date": "$out.minDate",
-      "text": "$out._id.text"
-    }
-  }
+    {"$sort": {"minDate": 1, "_id.name": 1}},
+    {"$group": {"_id": "$_id.text", "out": {"$first": "$$ROOT"}, "allDatesSaidUniqueToUserAndTitle": {"$push": "$minDate"}}},
+    {
+        "$project": {
+            "name": "$out._id.name",
+            "minDate": "$out.minDate",
+            "text": "$out._id.text",
+            "allDatesSaidUniqueToUserAndTitle": "$allDatesSaidUniqueToUserAndTitle"
+        }
+    },
+    {"$addFields": {"totalEcho": {"$size": "$allDatesSaidUniqueToUserAndTitle"}}}
 ]
 
-var combine = [
-  ...first_said,
-  {
-    "$lookup":{
-      from: "users",
-      let: { message: "$text"},
-      as: "allEchosWithDates",
-      pipeline: [
-        ...all_echos_with_date,
-        { 
-          "$match":
-            { "$expr":
-              { "$and":
-                [
-                  { "$eq": [ "$_id.message",  "$$message" ] }
-                ]
-              }
+var usersFavorOrdered = [
+    {
+        "$match": {
+            "message.time": {
+                "$gte": new Date(new Date().getFullYear(), 1, 1),
+                "$lte": new Date(),
             }
-        },
-      ]
-    }
-  },
-  { 
-    "$sort": { "allEchosWithDates.totalEcho" : -1, "name": 1 }
-  },
+        }
+    },
+    ...firstSaid,
+    {"$group": {"_id": {"name": "$name"}, "favor": {"$sum": "$totalEcho"}}},
+    {"$project": {"_id": false, "name": "$_id.name", "favor": "$favor"}},
+    {"$sort": {"favor": -1, "name": 1}},
 ]
 
-//db.users.aggregate(combine);
+//db.users.getIndexes()
+//db.users.aggregate(combined)
+db.users.aggregate(usersFavorOrdered)
 
-var best_of_the_best = [
-  ...combine,
-  {
-    "$project": {
-      "name": "$name",
-      "count": "$allEchosWithDates.totalEcho"
-    }
-  },
-  {
-    "$unwind": "$count"
-  },
-  {
-    "$group": {
-      "_id":{
-        "name": "$name"
-      },
-      "favor": { "$sum": "$count" }
-    }
-  },
-  { 
-    "$sort": { "favor" : -1, "name": 1 }
-  },
-]
 
-var top = [
-  ...best_of_the_best,
-  { "$limit": 3 },
-  { "$group": { "_id": null, names:{$push:"$_id.name"} } },
-  { "$project": {"_id": false, "names": true} }
-]
-
-//db.users.aggregate(top);
+// allEchosWithDate
 /*
-[
-  {
-    "names": [
-      "BlankPage",
-      "Gutmatant",
-      "aSoapyoid"
-    ]
-  }
-]
+"executionStats": {
+  "executionSuccess": true,
+  "nReturned": 16557,
+  "executionTimeMillis": 79,
+  "totalKeysExamined": 0,
+  "totalDocsExamined": 17455,
 */
 
-var bin = "%Y-%m-%d %H:%M"
-var dateFrom = "2018-05-16T00:00:00Z"
-var dateTo = new Date(new Date(new Date().getFullYear(), 12, 1) - 1).toISOString()
-var top_users = ["BlankPage", "Gutmatant", "aSoapyoid"]
+//usersFavorOrdered
+/*
+"executionStats": {
+  "executionSuccess": true,
+  "nReturned": 16557,
+  "executionTimeMillis": 1600,
+  "totalKeysExamined": 0,
+  "totalDocsExamined": 17455,
+*/
 
-var best_binned = [
-  ...combine,
-  { "$match": { "$expr": { "$in": [ "$name", ["BlankPage", "Gutmatant", "aSoapyoid"] ] } } },
-  { "$unwind": "$allEchosWithDates" },
-  { "$unwind": "$allEchosWithDates.allDatesSaidUniqueToUserAndTitle" },
-  { "$match": {"allEchosWithDates.allDatesSaidUniqueToUserAndTitle":{ "$lte": ISODate(dateTo) , "$gte": ISODate(dateFrom)  }}},
-  // { 
-  //   "$group": {
-  //     "_id": {
-  //       "user": "$name",
-  //       "month": {
-  //         "$dateToString": {"format": "%Y-%m-%d %H:%M", "date": "$allEchosWithDates.allDatesSaidUniqueToUserAndTitle"}
-  //         },
-  //     },
-  //     "items": {"$push": "$text"},
-  //   }
-  // },
-  // {
-  //   "$project": {
-  //     "_id": false,
-  //     "user": "$_id.user",
-  //     "month": "$_id.month",
-  //     "count": { "$size": "$items" }
-  //   }
-  // },
-  // { 
-  //   "$sort": { "month" : 1, "count": -1, "name": 1 }
-  // },
-]
+// allEchosWithDate in lookup subquery
+/*
+"executionStats": {
+  "totalDocsExamined": 17455,
+  "totalKeysExamined": 0,
+  "collectionScans": 2,
+  "indexesUsed": [],
+  "nReturned": 1610,
+  "executionTimeMillisEstimate": 1584 (from 104 which gives 1480/1600 ms of the execution time)
+*/
 
-db.users.aggregate(best_binned)
+// justlookup
+/*
+"executionStats": {
+  "executionSuccess": true,
+  "nReturned": 17455,
+  "executionTimeMillis": 21623,
+  "totalKeysExamined": 0,
+  "totalDocsExamined": 17455,
 
+  "totalDocsExamined": 17455,
+  "totalKeysExamined": 0,
+  "collectionScans": 2,
+  "indexesUsed": [],
+  "nReturned": 17455,
+  "executionTimeMillisEstimate": 21606
+*/
 
-// var deleteme = [
-//   {
-//     "$group":
-//     {
-//       "_id": {
-//         "title": "$title",
-//         "message": { "$toLower": "$message.text" },
-//         "name": "$name"
-//       },
-//       "minDate": { "$min": "$message.time" }
-//     },
-//   },
-//   {"$match": {"minDate":{ "$lte": ISODate(dateTo) , "$gte": ISODate(dateFrom)  }}}
-// ]
+// justLookup w/o allEchosWithDate
+/*
+"executionStats": {
+  "executionSuccess": true,
+  "nReturned": 17455,
+  "executionTimeMillis": 246286,
+  "totalKeysExamined": 0,
+  "totalDocsExamined": 17455,
 
-// db.users.aggregate(deleteme)
+  "totalDocsExamined": 304677025,
+  "totalKeysExamined": 0,
+  "collectionScans": 34910,
+  "indexesUsed": [],
+  "nReturned": 17455,
+  "executionTimeMillisEstimate": 245870
+*/

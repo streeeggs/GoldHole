@@ -102,33 +102,35 @@ def users():
     return success(json.dumps(parsed))
 
 
-@app.route("/users/top/real")
-@cache.cached(timeout=120)
-def users_topTitle():
+# Killed for now...
+# @app.route("/users/top/real")
+# @cache.cached(timeout=120)
+# def users_topTitle():
 
-    # Who's the best
-    top = Counter(json.loads(users_topMessage())["Count"]).most_common(1)[0][0]
+#     # Who's the best
+#     top = Counter(json.loads(users_topMessage())["Count"]).most_common(1)[0][0]
 
-    # What did they say
-    what_said = mongo.db.users.aggregate(
-        first_said_by_aggregate + [{"$match": {"Name": top}}]
-    )
+#     # What did they say
+#     what_said = mongo.db.users.aggregate(
+#         first_said_by_aggregate + [{"$match": {"Name": top}}]
+#     )
 
-    # How many times did people repeat them
-    count_by_title = mongo.db.users.aggregate(most_echo_by_title_aggregate)
+#     # How many times did people repeat them
+#     count_by_title = mongo.db.users.aggregate(most_echo_by_title_aggregate)
 
-    # DFs for each
-    said_df = pd.DataFrame(list(what_said)).sort_values(by=["Date"], ascending=False)
-    count_df = pd.DataFrame(list(count_by_title)).sort_values(
-        by=["Count"], ascending=False
-    )
+#     # DFs for each
+#     said_df = pd.DataFrame(list(what_said)).sort_values(by=["Date"], ascending=False)
+#     count_df = pd.DataFrame(list(count_by_title)).sort_values(
+#         by=["Count"], ascending=False
+#     )
 
-    # Merge
-    result = said_df.merge(count_df, on=["Message", "Title"]).sort_values(
-        by=["Count"], ascending=False
-    )
+#     # Merge
+#     result = said_df.merge(count_df, on=["Message", "Title"]).sort_values(
+#         by=["Count"], ascending=False
+#     )
+#     parsed = json.loads(result.to_json(orient="records"))
 
-    return success(json.loads(result.to_json(orient="records")))
+#     return success(json.dumps(parsed))
 
 
 @app.route("/users/top/message")
@@ -182,17 +184,35 @@ def videos_history(name):
     return success(dumps(mongo.db.videos.aggregate(pipeline)))
 
 
-@app.route("/test/users")
+# FIXME: SLOW AS HELL
+
+# I'm aware this isn't really binning; I guess interval, period, or date bounding are better terms
+@app.route("/users/top/binned")
 @cache.cached(timeout=120, query_string=True)
-def test():
+def users_top_binned():
     date_bin = request.args.get("date_bin") or "ALLTIME"
     top_users_obj = list(mongo.db.users.aggregate(Users().getWinnersArray(date_bin)))
+    print(top_users_obj)
 
     response = success(
         dumps(
             mongo.db.users.aggregate(
-                Users().winnersFavorByDate(top_users_obj[0]["names"], date_bin)
+                Users().winnersFavorByDate(
+                    [user["name"] for user in top_users_obj], date_bin
+                )
             )
         )
     )
     return response
+
+
+@app.route("/users/top")
+@cache.cached(timeout=120, query_string=True)
+def users_top():
+    date_bin = request.args.get("date_bin") or "ALLTIME"
+    limit = request.args.get("limit") or 3
+    top_users_obj = dumps(
+        mongo.db.users.aggregate(Users().getWinnersArray(date_bin, int(limit)))
+    )
+
+    return success(top_users_obj)

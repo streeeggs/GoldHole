@@ -13,8 +13,17 @@ export default class UserService {
     let api = new ApiFactory("users/top/message");
     return await api.then((res) => res.json());
   }
-  async getTopOffenderAndMessages() {
-    let api = new ApiFactory("users/top/real");
+  // Kill for now
+  // async getTopOffenderAndMessages() {
+  //   let api = new ApiFactory("users/top/real");
+  //   return await api.then((res) => res.json());
+  // }
+  async getTopOffenderBinned(dateRange) {
+    let api = new ApiFactory(`users/top/binned?date_bin=${dateRange}`);
+    return await api.then((res) => res.json());
+  }
+  async getTopOffenders(dateRange = "ALLTIME", limit = 3) {
+    let api = new ApiFactory(`users/top?date_bin=${dateRange}&limit=${limit}`);
     return await api.then((res) => res.json());
   }
 }

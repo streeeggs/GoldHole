@@ -276,8 +276,9 @@ class Users:
     # Must be first in any pipelines that use it!
     excludeCheaters = [{"$match": {"name": {"$not": {"$regex": "^streeegg.*"}}}}]
 
-    firstSaid = [
+    winnersAggregateByMessage = [
         *excludeCheaters,
+        # Get all unique messages per title+user and their earliest date
         {
             "$group": {
                 "_id": {
@@ -288,63 +289,34 @@ class Users:
                 "minDate": {"$min": "$message.time"},
             },
         },
+        # Need to sort by date (tie breaker on name) the next stage...
         {"$sort": {"minDate": 1, "_id.name": 1}},
-        {"$group": {"_id": "$_id.text", "out": {"$first": "$$ROOT"}}},
+        # Grab first record to see who got it first and push all other "unique repeated" dates in an array
+        {
+            "$group": {
+                "_id": "$_id.text",
+                "out": {"$first": "$$ROOT"},
+                "allDatesSaidUniqueToUserAndTitle": {"$push": "$minDate"},
+            }
+        },
+        # Project to pull values out of objects
         {
             "$project": {
                 "name": "$out._id.name",
                 "date": "$out.minDate",
                 "text": "$out._id.text",
+                "allDatesSaidUniqueToUserAndTitle": "$allDatesSaidUniqueToUserAndTitle",
             }
         },
-    ]
-
-    allEchosWithDate = [
-        *excludeCheaters,
-        {
-            "$group": {
-                "_id": {
-                    "title": "$title",
-                    "message": {"$toLower": "$message.text"},
-                    "name": "$name",
-                },
-                "minDate": {"$min": "$message.time"},
-            }
-        },
-        {
-            "$group": {
-                "_id": {"message": "$_id.message"},
-                "allDatesSaidUniqueToUserAndTitle": {"$push": "$minDate"},
-            }
-        },
+        # Size of the array = how many people said it
         {"$addFields": {"totalEcho": {"$size": "$allDatesSaidUniqueToUserAndTitle"}}},
     ]
 
-    combined = [
-        *firstSaid,
-        {
-            "$lookup": {
-                "from": "users",
-                "let": {"message": "$text"},
-                "as": "allEchosWithDates",
-                "pipeline": [
-                    *allEchosWithDate,
-                    {
-                        "$match": {
-                            "$expr": {"$and": [{"$eq": ["$_id.message", "$$message"]}]}
-                        }
-                    },
-                ],
-            }
-        },
-        {"$sort": {"allEchosWithDates.totalEcho": -1, "name": 1}},
-    ]
-
+    # Condense the result and sort to make it easier to parse for winners later
     usersFavorOrdered = [
-        *combined,
-        {"$project": {"name": "$name", "count": "$allEchosWithDates.totalEcho"}},
-        {"$unwind": "$count"},
-        {"$group": {"_id": {"name": "$name"}, "favor": {"$sum": "$count"}}},
+        *winnersAggregateByMessage,
+        {"$group": {"_id": {"name": "$name"}, "favor": {"$sum": "$totalEcho"}}},
+        {"$project": {"_id": False, "name": "$_id.name", "favor": "$favor"}},
         {"$sort": {"favor": -1, "name": 1}},
     ]
 
@@ -370,10 +342,17 @@ class Users:
             raise ValueError(f"Provided dateBin {dateBin} isn't an accept value")
 
         return [
+            {
+                "$match": {
+                    "message.time": {
+                        "$gte": date_from,
+                        "$lte": date_to,
+                    }
+                }
+            },
             *self.usersFavorOrdered,
             {"$limit": limit},
-            {"$group": {"_id": None, "names": {"$push": "$_id.name"}}},
-            {"$project": {"_id": False, "names": True}},
+            {"$project": {"_id": False, "name": "$_id.name", "favor": True}},
         ]
 
     def winnersFavorByDate(self, winners, dateBin):
@@ -398,20 +377,18 @@ class Users:
             raise ValueError("Winners list cannot be empty")
 
         return [
-            *self.combined,
-            {"$match": {"$expr": {"$in": ["$name", winners]}}},
-            {"$match": {"$expr": {"$in": ["$name", winners]}}},
-            {"$unwind": "$allEchosWithDates"},
-            {"$unwind": "$allEchosWithDates.allDatesSaidUniqueToUserAndTitle"},
-            # Match could be made earlier to improve performance but would require redoing the complicated pipeline so.. nah
             {
                 "$match": {
-                    "allEchosWithDates.allDatesSaidUniqueToUserAndTitle": {
+                    "message.time": {
                         "$gte": date_from,
                         "$lte": date_to,
                     }
                 }
             },
+            *self.winnersAggregateByMessage,
+            {"$match": {"$expr": {"$in": ["$name", winners]}}},
+            {"$unwind": "$allEchosWithDates"},
+            {"$unwind": "$allEchosWithDates.allDatesSaidUniqueToUserAndTitle"},
             {
                 "$group": {
                     "_id": {

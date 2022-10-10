@@ -1,7 +1,7 @@
 <template>
   <div>
     <nav-template />
-    <winner-card :top="['idk soemthing']" title="Gold that defines us" />
+    <winner-card :top="['Soon']" title="One day, this will make you rich" />
   </div>
 </template>
 

@@ -1,3 +1,5 @@
+import { LineChart, LineDataset } from "./ChartModels";
+
 /*
  * Collection of functions to try and unify data from a pandas DF or straight from a JSONified PyMongoDB result
  * Also controls some common styling elements in shitty way since I'm currently styling each chart instead of styling globally
@@ -58,6 +60,30 @@ export const objectToDataset = (json, generate_colors = false) => {
   };
   res.datasets[0].data = json; // TOOD: Function should be more agnostic to multiple datasets; not just one
   return res;
+};
+
+/**
+ * Mapper for "/users/top/binned?data_bin=..." that builds datasets for each user.
+ * Result is for a LineChart.
+ * @param {Object} json API response from date range user API
+ * @returns LineChart based on data
+ */
+export const mapUserDataResultToLine = (json) => {
+  const uniqueUsers = [...new Set(json.map((rec) => rec.user))];
+  const uniqueDates = [...new Set(json.map((rec) => rec.bin))];
+  const dataSets = [];
+  for (let user of uniqueUsers) {
+    const data = [];
+    json
+      .filter((record) => record.user === user)
+      .reduce((acc, rec) => {
+        const currentCount = acc + rec.totalEchoCount;
+        data.push(currentCount);
+        return currentCount;
+      }, 0);
+    dataSets.push(new LineDataset(user, data));
+  }
+  return new LineChart(uniqueDates, dataSets);
 };
 
 // Start of ugly string manip... TODO: Move to own file?

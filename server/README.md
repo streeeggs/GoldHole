@@ -1,9 +1,9 @@
 # goldhole API
 
-## API
+## Setup
 
-- Create an `.ini` file based on the sample provided for the mongoDb conn string
-- `flask run`
+- Create an `.env` file based on the sample provided for the mongoDb conn string
+- `waitress-serve --listen=*:5000 app:app`
 
 ## DB
 

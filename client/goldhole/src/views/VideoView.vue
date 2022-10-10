@@ -1,7 +1,7 @@
 <template>
   <div>
     <nav-template />
-    <winner-card :top="videosTopData.labels" />
+    <winner-card :top="videosTopData.labels" title="Top Video" />
     <top-chart
       :chart-data="videosData"
       :loaded="loaded"

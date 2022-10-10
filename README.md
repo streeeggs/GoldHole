@@ -25,13 +25,15 @@ Parse coolhole and look at shit
 - [ ] Fix UI build size (324.4kB JS chunk and 299.4kB CSS chunk)
 - [ ] Make binned winners (week, month, year, all time)
 - [ ] 💸Stocks view💸
+  - Started but not done
 - [ ] [WordCloud](https://github.com/sgratzl/chartjs-chart-wordcloud)
 - [ ] Parse "gold emojis" (blank)
 - [x] API Caching
 - [ ] UI Caching
 - [ ] API Authentication
-- [ ] Unit tests
 - [ ] Mock data
+- [ ] Unit tests
+- [ ] Update READMEs
 - [ ] Style navbar
 - [ ] Style graphs on load
 - [ ] Style layout

@@ -11,11 +11,15 @@ export default {
   props: {
     top: {
       type: Array,
-      default: () => [],
+      default: () => ["Soon"],
+    },
+    chartData: {
+      type: Object,
+      default: () => {},
     },
     title: {
       type: String,
-      default: "Item of Interest:",
+      default: "Nothing here yet",
     },
   },
 };

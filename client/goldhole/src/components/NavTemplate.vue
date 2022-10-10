@@ -15,7 +15,7 @@
         </v-list-item-group>
       </v-list>
       <template v-slot:append>
-        <div class="d-flex flex-column align-center flex-wrap pa-2">
+        <div class="d-flex flex-column align-center flex-wrap pa-2 pb-5">
           <v-btn
             block
             tile

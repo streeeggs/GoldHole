@@ -2,20 +2,22 @@
   <div>
     <nav-template />
     <winner-card
-      :top="Object.keys(topData.datasets[0].data)"
-      title="Number 1 Offender"
+      :top="topOffenderData"
+      :charData="topOffenderHistory"
+      title="Your Winners"
     />
     <top-chart
       :chart-data="topData"
       :loaded="topLoaded"
       chart-id="topOffenders"
-      title="Ranking Offenders"
+      title="Total Ranking"
     />
     <user-table
-      title="Recorded Evidence"
+      title="Recorded Wins"
       :data="offenderData"
       :loaded="offenderLoaded"
     />
+    <!-- kill for now 
     <radar-chart
       :title="
         'Anatomy of ' +
@@ -24,7 +26,7 @@
       "
       chart-id="anatomyofacriminal"
       :chartData="hisData"
-    />
+    /> -->
   </div>
 </template>
 
@@ -33,13 +35,17 @@ import UserService from "../service/UserService";
 
 import {
   objectToDataset,
-  coulmnToDataset,
+  // Kill for now
+  //coulmnToDataset,
+  mapUserDataResultToLine,
 } from "../components/dataMappingUtil";
 import TopChart from "../components/TopChart";
 import UserTable from "../components/UserTable";
 import NavTemplate from "../components/NavTemplate";
 import WinnerCard from "../components/WinnerCard";
-import RadarChart from "../components/RadarChart";
+// Kill for now
+//import RadarChart from "../components/RadarChart";
+import { userDateBins } from "../store/store";
 
 export default {
   name: "OffendersView",
@@ -49,15 +55,14 @@ export default {
     TopChart,
     NavTemplate,
     WinnerCard,
-    RadarChart,
+    //Kill for now
+    //RadarChart,
   },
   userService: null,
   watch: {
-    options: {
-      handler() {
-        this.getTopOffenderMessagesFromApi();
-        this.getOffenderDataFromApi();
-        this.getMessagesFromTopOffenderFromApi();
+    "userDateBins.item": {
+      handler(val) {
+        this.getTopOffenderByDateRange(val);
       },
       deep: true,
     },
@@ -65,7 +70,9 @@ export default {
   async mounted() {
     this.getTopOffenderMessagesFromApi();
     this.getOffenderDataFromApi();
-    this.getMessagesFromTopOffenderFromApi();
+    //this.getMessagesFromTopOffenderFromApi();
+    this.getTopOffenderByDateRange(this.userDateBins.item);
+    this.getTopOffenders(this.userDateBins.item);
   },
   methods: {
     getOffenderDataFromApi() {
@@ -94,30 +101,46 @@ export default {
         console.error(e);
       }
     },
-    getMessagesFromTopOffenderFromApi() {
-      this.hesLoaded = false;
-      try {
-        this.userService.getTopOffenderAndMessages().then((data) => {
-          this.hisData = coulmnToDataset(
-            data.slice(0, 10).sort(() => {
-              return 0.5 - Math.random();
-            }),
-            "Message",
-            "Count",
-            false,
-            true
-          );
-          this.hisData.datasets[0].backgroundColor = [
-            "rgba(205, 175, 20, 0.4)",
-          ];
-          this.hisData.datasets[0].label = "His influence is palpable";
-          this.hisData.datasets[0].pointHoverBackgroundColor = "white";
-          this.hisData.datasets[0].pointHoverBorderColor = "white";
-        });
-        this.hesLoaded = true;
-      } catch (e) {
-        console.error(e);
-      }
+    // Kill for now
+    // getMessagesFromTopOffenderFromApi() {
+    //   this.hesLoaded = false;
+    //   try {
+    //     this.userService.getTopOffenderAndMessages().then((data) => {
+    //       this.hisData = coulmnToDataset(
+    //         data.slice(0, 10).sort(() => {
+    //           return 0.5 - Math.random();
+    //         }),
+    //         "Message",
+    //         "Count",
+    //         false,
+    //         true
+    //       );
+    //       this.hisData.datasets[0].backgroundColor = [
+    //         "rgba(205, 175, 20, 0.4)",
+    //       ];
+    //       this.hisData.datasets[0].label = "His influence is palpable";
+    //       this.hisData.datasets[0].pointHoverBackgroundColor = "white";
+    //       this.hisData.datasets[0].pointHoverBorderColor = "white";
+    //     });
+    //     this.hesLoaded = true;
+    //   } catch (e) {
+    //     console.error(e);
+    //   }
+    // },
+    getTopOffenderByDateRange(dateRange) {
+      this.historyLoaded = false;
+      this.userService.getTopOffenderBinned(dateRange).then((data) => {
+        this.topOffenderHistory = mapUserDataResultToLine(data);
+      });
+      this.historyLoaded = true;
+    },
+    getTopOffenders(dateRange) {
+      // TODO: Properly load w/ own varible
+      this.dataLoaded = false;
+      this.userService.getTopOffenders(dateRange).then((data) => {
+        this.topOffenderData = data.map((rec) => rec.name);
+      });
+      this.dataLoaded = true;
     },
   },
   created() {
@@ -147,10 +170,19 @@ export default {
           },
         ],
       },
-      hesLoaded: false,
       topLoaded: false,
       offenderLoaded: false,
+      historyLoaded: false,
+      dataLoaded: false,
       offenderData: [{}],
+      topOffenderData: [],
+      topOffenderHistory: {
+        labels: [],
+        datasets: [
+          { label: "", data: [], borderColor: "rgba(205, 175, 20, 0.4)" },
+        ],
+      },
+      userDateBins,
     };
   },
 };
