@@ -1,7 +1,7 @@
 import { LineChart, LineDataset } from "./ChartModels";
 
 /*
- * Collection of functions to try and unify data from a pandas DF or straight from a JSONified PyMongoDB result
+ * Just need to map shit that comes back from the API to whatever chart.js expects
  * Also controls some common styling elements in shitty way since I'm currently styling each chart instead of styling globally
  * Probably best to have a seperate collection of functions to hanlde that or, you know, do it right with global styling
  */
@@ -58,29 +58,20 @@ export const objectToDataset = (json, generate_colors = false) => {
       },
     ],
   };
-  res.datasets[0].data = json; // TOOD: Function should be more agnostic to multiple datasets; not just one
+  res.datasets[0].data = json; // TODO: Function should be more agnostic to multiple datasets; not just one
   return res;
 };
 
 /**
- * Mapper for "/users/top/binned?data_bin=..." that builds datasets for each user.
+ * Mapper for "/users that builds datasets for each user.
  * Result is for a LineChart.
- * @param {Object} json API response from date range user API
- * @returns LineChart based on data
+ * @param {Object} json API response from date range user. Expects a shape of [{"date", "user", "favor"}]
+ * @returns {LineChart}
  */
 export const mapUserDataResultToLine = (json) => {
-  const uniqueUsers = [...new Set(json.map((rec) => rec.user))];
-  const uniqueDates = [...new Set(json.map((rec) => rec.bin))];
   const dataSets = [];
-  for (let user of uniqueUsers) {
+  for (let user of json) {
     const data = [];
-    json
-      .filter((record) => record.user === user)
-      .reduce((acc, rec) => {
-        const currentCount = acc + rec.totalEchoCount;
-        data.push(currentCount);
-        return currentCount;
-      }, 0);
     dataSets.push(new LineDataset(user, data));
   }
   return new LineChart(uniqueDates, dataSets);
@@ -88,16 +79,16 @@ export const mapUserDataResultToLine = (json) => {
 
 // Start of ugly string manip... TODO: Move to own file?
 
-const maxLabelLen = 30;
+const MAX_LABEL_LEN = 20;
 /**
  * Shorten a given label
  * @param {String} str
  * @returns Shorten label if over max length
  */
 const shortenLabel = (str) =>
-  str.length < maxLabelLen
+  str.length < MAX_LABEL_LEN
     ? str
-    : str.substring(0, str.lastIndexOf(" ", maxLabelLen));
+    : str.substring(0, str.lastIndexOf(" ", MAX_LABEL_LEN));
 
 const blue_dark = "rgba(91, 100, 222, 0.4)";
 const blue_light = "rgba(91, 192, 222, 0.4)";

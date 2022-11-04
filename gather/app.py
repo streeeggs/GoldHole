@@ -133,7 +133,13 @@ def parseUserMessage(html):
         )  # [23:59:59] (will probably pull from title) -> 1900-01-01 23:59:59
 
         # Get message
-        data_text = re.search('data-text=".+">', html.split("</span>")[0]).group(
+        data_text = re.search('data-text=".+">', html.split("</span>")[0])
+
+        ## FIXME: Edge case since gold emotes still break this shit lol
+        if not data_text:
+            return None
+
+        data_text = data_text.group(
             0
         )  # data-text="message"> (need the closing bracket to gaurentee I've selected the whole message)
         message = data_text.split("=")[1].split('"')[
@@ -151,7 +157,7 @@ def parseUserMessage(html):
 # Goal: Gather "quality" metrics on golds.
 # Philosophy: Uniqueness implies "quality" between users (more repetitions, more value). Uniqueness impleis "quality" between videos (less likely ergo more valuable)
 # Returns two sets: golds by user, title, and date and golds by title and date
-def get_gold(lottery_js):
+def get_gold():
 
     try:
         # Locators
@@ -216,6 +222,9 @@ def get_gold(lottery_js):
                     and whole_gold.nth(i).text_content().strip()
                 ):
                     html = whole_gold.nth(i).evaluate("el => el.outerHTML")
+                    ## DEBUG
+                    print(whole_gold.nth(i).text_content().strip(), html)
+
                     whole_gold.nth(i).evaluate("el => el.remove()")
                     parsed_message = parseUserMessage(html)
                     if parsed_message:
@@ -276,10 +285,7 @@ if __name__ == "__main__":
 
         while not isItTimeToKill():
 
-            # Need to pass lottery_js since websocket isn't sending it over
-            res = get_gold(
-                lottery_js
-            )  # returns (user_array, video_array, title_text_origin)
+            res = get_gold()  # returns (user_array, video_array, title_text_origin)
 
             # Create json file after video is over to preserve data in the event of a failure and reduce memory pressure
             if res:

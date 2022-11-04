@@ -276,64 +276,8 @@ class Users:
     # Must be first in any pipelines that use it!
     excludeCheaters = [{"$match": {"name": {"$not": {"$regex": "^streeegg.*"}}}}]
 
-    winnersAggregateByMessage = [
-        *excludeCheaters,
-        # Get all unique messages per title+user and their earliest date
-        {
-            "$group": {
-                "_id": {
-                    "text": {"$toLower": "$message.text"},
-                    "name": "$name",
-                    "title": "$title",
-                },
-                "minDate": {"$min": "$message.time"},
-            },
-        },
-        # Need to sort by date (tie breaker on name) the next stage...
-        {"$sort": {"minDate": 1, "_id.name": 1}},
-        # Grab first record to see who got it first and push all other "unique repeated" dates in an array
-        {
-            "$group": {
-                "_id": "$_id.text",
-                "out": {"$first": "$$ROOT"},
-                "allDatesSaidUniqueToUserAndTitle": {"$push": "$minDate"},
-            }
-        },
-        # Project to pull values out of objects
-        {
-            "$project": {
-                "name": "$out._id.name",
-                "date": "$out.minDate",
-                "text": "$out._id.text",
-                "allDatesSaidUniqueToUserAndTitle": "$allDatesSaidUniqueToUserAndTitle",
-            }
-        },
-        # Size of the array = how many people said it
-        {"$addFields": {"totalEcho": {"$size": "$allDatesSaidUniqueToUserAndTitle"}}},
-    ]
-
-    # Condense the result and sort to make it easier to parse for winners later
-    usersFavorOrdered = [
-        *winnersAggregateByMessage,
-        {"$group": {"_id": {"name": "$name"}, "favor": {"$sum": "$totalEcho"}}},
-        {"$project": {"_id": False, "name": "$_id.name", "favor": "$favor"}},
-        {"$sort": {"favor": -1, "name": 1}},
-    ]
-
-    def getWinnersArray(self, dateBin, limit=3):
-        """
-        Expensively* determines the top users given a limit and returns an array
-        *requires going through the whole pipeline plus an additional aggregate to reduce/sum the count
-        use with care
-
-        Parameters
-        ---------
-        dateBin : string enum DateBins
-            which grouping of dates you want to search over
-        limit : int, optional
-            top winners
-        """
-
+    # TODO: Move/marry logic in to FirstSaidAggregate
+    def messageStatsBinned(self, dateBin):
         if hasattr(DateBins, dateBin):
             format_string = DateBins[dateBin].value[0]
             date_from = DateBins[dateBin].value[1]
@@ -342,6 +286,7 @@ class Users:
             raise ValueError(f"Provided dateBin {dateBin} isn't an accept value")
 
         return [
+            *self.excludeCheaters,
             {
                 "$match": {
                     "message.time": {
@@ -350,67 +295,165 @@ class Users:
                     }
                 }
             },
-            *self.usersFavorOrdered,
-            {"$limit": limit},
-            {"$project": {"_id": False, "name": "$_id.name", "favor": True}},
-        ]
-
-    def winnersFavorByDate(self, winners, dateBin):
-        """
-        Gather number of golds for given winners binned per date given
-
-        Parameters
-        ----------
-        winners : list(string)
-            list of users we want to search for
-        dateBin : enum DateBins
-            which grouping of dates you want to search over
-        """
-        if hasattr(DateBins, dateBin):
-            format_string = DateBins[dateBin].value[0]
-            date_from = DateBins[dateBin].value[1]
-            date_to = datetime.today()
-        else:
-            raise ValueError(f"Provided dateBin {dateBin} isn't an accept value")
-
-        if not winners:
-            raise ValueError("Winners list cannot be empty")
-
-        return [
-            {
-                "$match": {
-                    "message.time": {
-                        "$gte": date_from,
-                        "$lte": date_to,
-                    }
-                }
-            },
-            *self.winnersAggregateByMessage,
-            {"$match": {"$expr": {"$in": ["$name", winners]}}},
-            {"$unwind": "$allEchosWithDates"},
-            {"$unwind": "$allEchosWithDates.allDatesSaidUniqueToUserAndTitle"},
+            # Get all unique messages per title+user and their earliest date
             {
                 "$group": {
                     "_id": {
-                        "user": "$name",
-                        "bin": {
-                            "$dateToString": {
-                                "format": format_string,
-                                "date": "$allEchosWithDates.allDatesSaidUniqueToUserAndTitle",
-                            }
-                        },
+                        "text": {"$toLower": "$message.text"},
+                        "name": "$name",
+                        "title": "$title",
                     },
-                    "items": {"$push": "$text"},
+                    "minDate": {"$min": "$message.time"},
                 }
             },
+            # Need to sort so we can get first message
+            {"$sort": {"minDate": 1, "_id.name": 1}},
+            # Aggregate by who first said the message and push each time the message was repeated to an array. Bin each date added too
+            {
+                "$group": {
+                    "_id": {
+                        "text": "$_id.text",
+                        "title": "$_id.title",
+                    },
+                    "first": {"$first": "$$ROOT"},
+                    "whoFollowed": {
+                        "$push": {
+                            "text": "$_id.text",
+                            "name": "$_id.name",
+                            "title": "$_id.title",
+                            "date": {
+                                "$dateToString": {
+                                    "format": format_string,
+                                    "date": "$minDate",
+                                }
+                            },
+                        }
+                    },
+                }
+            },
+        ]
+
+    def winnersFavorByDate(self, dateBin, limit=3):
+        """
+        Gather all messages "owned" ordered by those with the most messages
+
+        Parameters
+        ----------
+        dateBin : enum DateBins
+            which grouping of dates you want to search over
+
+        limit : int
+            total number of users to return
+        """
+
+        return [
+            *self.messageStatsBinned(dateBin),
+            # Group by user and push the details of who followed them to an array
+            {
+                "$group": {
+                    "_id": {"user": "$first._id.name"},
+                    "messages": {
+                        "$push": {
+                            "message": "$_id.text",
+                            "title": "$_id.title",
+                            "details": "$whoFollowed",
+                            "favorEarned": {"$size": "$whoFollowed"},
+                        }
+                    },
+                }
+            },
+            # Not sure if it's faster/slower but seemed little nicer than "$size": "$messages.details" idk tired
+            {"$addFields": {"totalFavor": {"$sum": "$messages.favorEarned"}}},
+            {"$sort": {"totalFavor": -1, "name": 1}},
+            {"$limit": limit},
+            {
+                "$facet": {
+                    "totals": [
+                        {
+                            "$project": {
+                                "_id": False,
+                                "name": "$_id.user",
+                                "messages": "$messages",
+                                "totalFavor": "$totalFavor",
+                            }
+                        },
+                    ],
+                    # TODO: Find a way to consolidate this into the above query instead of needing a seperate group for this
+                    # hate this shit
+                    "perdate": [
+                        {"$unwind": "$messages"},
+                        {"$project": {"details": "$messages.details"}},
+                        {"$unwind": "$details"},
+                        {
+                            "$group": {
+                                "_id": {"date": "$details.date", "user": "$_id.user"},
+                                "favor": {"$sum": 1},
+                            }
+                        },
+                        {
+                            "$project": {
+                                "_id": False,
+                                "date": "$_id.date",
+                                "user": "$_id.user",
+                                "favor": "$favor",
+                            }
+                        },
+                        {"$sort": {"date": 1, "favor": -1, "user": 1}},
+                    ],
+                }
+            },
+        ]
+
+    def favorPerUser(self, dateBin):
+        """
+        Gather the count per user
+
+        Parameters
+        ----------
+        dateBin : enum DateBins
+            which grouping of dates you want to search over
+        """
+
+        return [
+            *self.messageStatsBinned(dateBin),
+            # Group by user and sum the lenght of messages they own
+            {
+                "$group": {
+                    "_id": {"user": "$first._id.name"},
+                    "totalFavor": {"$sum": {"$size": "$whoFollowed"}},
+                }
+            },
+            {"$sort": {"totalFavor": -1, "_id.user": 1}},
+            {"$project": {"_id": False, "user": "$_id.user", "totalFavor": 1}},
+        ]
+
+    # TODO: Create own class for messages and move this there (only here b/c messageStatsBinned isn't a common function)
+    def messageList(self, dateBin):
+        """
+        Gather thin information per message
+
+        Parameters
+        ----------
+        dateBin : enum DateBins
+            which grouping of dates you want to search over
+        """
+
+        return [
+            *self.messageStatsBinned(dateBin),
             {
                 "$project": {
                     "_id": False,
-                    "user": "$_id.user",
-                    "bin": "$_id.bin",
-                    "messages": {"$setUnion": ["$items", "$items"]},
-                    "totalEchoCount": {"$size": "$items"},
+                    "user": "$first._id.name",
+                    "message": "$first._id.text",
+                    "title": "$first._id.title",
+                    "date": {
+                        "$dateToString": {
+                            "format": "%Y-%m-%d %H:%M:%S",
+                            "date": "$first.minDate",
+                        }
+                    },
+                    "favor": {"$size": "$whoFollowed"},
                 }
             },
-            {"$sort": {"bin": 1, "count": -1, "name": 1}},
+            {"$sort": {"favor": -1, "user": 1}},
         ]

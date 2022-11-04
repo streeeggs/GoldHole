@@ -56,50 +56,51 @@ def success(json):
     return make_response(json, 200, {"Content-Type": "application/json"})
 
 
-@app.route("/user/top")
-@cache.cached(timeout=120)
-def top_users():
-    # Who said it first
-    first_said = mongo.db.users.aggregate(first_said_by_aggregate)
-    # How many times was it said
-    count_by_title = mongo.db.users.aggregate(most_echo_by_title_aggregate)
+# Killed for now
+# @app.route("/user/top")
+# @cache.cached(timeout=120)
+# def top_users():
+#     # Who said it first
+#     first_said = mongo.db.users.aggregate(first_said_by_aggregate)
+#     # How many times was it said
+#     count_by_title = mongo.db.users.aggregate(most_echo_by_title_aggregate)
 
-    # DFs for each
-    said_df = pd.DataFrame(list(first_said)).sort_values(by=["Date"], ascending=False)
-    count_df = pd.DataFrame(list(count_by_title)).sort_values(
-        by=["Count"], ascending=False
-    )
+#     # DFs for each
+#     said_df = pd.DataFrame(list(first_said)).sort_values(by=["Date"], ascending=False)
+#     count_df = pd.DataFrame(list(count_by_title)).sort_values(
+#         by=["Count"], ascending=False
+#     )
 
-    # Merge
-    result = said_df.merge(count_df, on=["Message", "Title"]).sort_values(
-        by=["Count"], ascending=False
-    )
-    parsed = json.loads(result.to_json(orient="records"))
+#     # Merge
+#     result = said_df.merge(count_df, on=["Message", "Title"]).sort_values(
+#         by=["Count"], ascending=False
+#     )
+#     parsed = json.loads(result.to_json(orient="records"))
 
-    return success(json.dumps(parsed))
+#     return success(json.dumps(parsed))
 
+# Killed for now
+# @app.route("/users")
+# @cache.cached(timeout=120)
+# def users():
+#     # Who said it first
+#     first_said = mongo.db.users.aggregate(first_said_by_aggregate)
+#     # How many times was it said
+#     count_by_title = mongo.db.users.aggregate(most_echo_by_title_aggregate)
 
-@app.route("/users")
-@cache.cached(timeout=120)
-def users():
-    # Who said it first
-    first_said = mongo.db.users.aggregate(first_said_by_aggregate)
-    # How many times was it said
-    count_by_title = mongo.db.users.aggregate(most_echo_by_title_aggregate)
+#     # DFs for each
+#     said_df = pd.DataFrame(list(first_said)).sort_values(by=["Date"], ascending=False)
+#     count_df = pd.DataFrame(list(count_by_title)).sort_values(
+#         by=["Count"], ascending=False
+#     )
 
-    # DFs for each
-    said_df = pd.DataFrame(list(first_said)).sort_values(by=["Date"], ascending=False)
-    count_df = pd.DataFrame(list(count_by_title)).sort_values(
-        by=["Count"], ascending=False
-    )
+#     # Merge
+#     result = said_df.merge(count_df, on=["Message", "Title"]).sort_values(
+#         by=["Count"], ascending=False
+#     )
+#     parsed = json.loads(result.to_json(orient="records"))
 
-    # Merge
-    result = said_df.merge(count_df, on=["Message", "Title"]).sort_values(
-        by=["Count"], ascending=False
-    )
-    parsed = json.loads(result.to_json(orient="records"))
-
-    return success(json.dumps(parsed))
+#     return success(json.dumps(parsed))
 
 
 # Killed for now...
@@ -184,35 +185,35 @@ def videos_history(name):
     return success(dumps(mongo.db.videos.aggregate(pipeline)))
 
 
-# FIXME: SLOW AS HELL
+## Users
 
 # I'm aware this isn't really binning; I guess interval, period, or date bounding are better terms
-@app.route("/users/top/binned")
+@app.route("/users")
 @cache.cached(timeout=120, query_string=True)
-def users_top_binned():
+def users():
     date_bin = request.args.get("date_bin") or "ALLTIME"
-    top_users_obj = list(mongo.db.users.aggregate(Users().getWinnersArray(date_bin)))
-    print(top_users_obj)
-
-    response = success(
-        dumps(
-            mongo.db.users.aggregate(
-                Users().winnersFavorByDate(
-                    [user["name"] for user in top_users_obj], date_bin
-                )
-            )
-        )
+    limit = (
+        int(request.args.get("limit"))
+        if request.args.get("limit") is not None
+        and request.args.get("limit").isdecimal()
+        else 3
     )
-    return response
+
+    return success(
+        dumps(mongo.db.users.aggregate(Users().winnersFavorByDate(date_bin, limit)))
+    )
 
 
 @app.route("/users/top")
 @cache.cached(timeout=120, query_string=True)
-def users_top():
+def users_count():
     date_bin = request.args.get("date_bin") or "ALLTIME"
-    limit = request.args.get("limit") or 3
-    top_users_obj = dumps(
-        mongo.db.users.aggregate(Users().getWinnersArray(date_bin, int(limit)))
-    )
+    return success(dumps(mongo.db.users.aggregate(Users().favorPerUser(date_bin))))
 
-    return success(top_users_obj)
+
+## Messages
+@app.route("/messages/list")
+@cache.cached(timeout=120, query_string=True)
+def messages():
+    date_bin = request.args.get("date_bin") or "ALLTIME"
+    return success(dumps(mongo.db.users.aggregate(Users().messageList(date_bin))))

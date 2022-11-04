@@ -1,6 +1,4 @@
-// Select the database to use.
 use('gold_hole');
-
 
 /*
   SELECT TOP 1 Title, Text, COUNT(*)
@@ -623,9 +621,134 @@ var usersFavorOrdered = [
     {"$sort": {"favor": -1, "name": 1}},
 ]
 
+var test = [
+    {
+        "$match": {
+            "message.time": {
+                "$gte": new Date("2017-01-01 00:00:00"),      
+                "$lte": new Date("2022-10-30 13:44:25.728374")
+            }
+        }
+    },
+    {
+        "$match": {
+            "name": {
+                "$not": {
+                    "$regex": "^streeegg.*"
+                }
+            }
+        }
+    },
+    {
+        "$group": {
+            "_id": {
+                "text": {
+                    "$toLower": "$message.text"
+                },
+                "name": "$name",
+                "title": "$title"
+            },
+            "minDate": {
+                "$min": "$message.time"
+            }
+        }
+    },
+    {
+        "$sort": {
+            "minDate": 1,
+            "_id.name": 1
+        }
+    },
+    {
+        "$group": {
+            "_id": "$_id.text",
+            "out": {
+                "$first": "$$ROOT"
+            },
+            "allDatesSaidUniqueToUserAndTitle": {
+                "$push": "$minDate"
+            }
+        }
+    },
+    {
+        "$project": {
+            "name": "$out._id.name",
+            "date": "$out.minDate",
+            "text": "$out._id.text",
+            "allDatesSaidUniqueToUserAndTitle": "$allDatesSaidUniqueToUserAndTitle"
+        }
+    },
+    {
+        "$addFields": {
+            "totalEcho": {
+                "$size": "$allDatesSaidUniqueToUserAndTitle"
+            }
+        }
+    },
+    {
+        "$match": {
+            "$expr": {
+                "$in": [
+                    "$name",
+                    [
+                        "BlankPage",
+                        "Gutmatant",
+                        "aSoapyoid"
+                    ]
+                ]
+            }
+        }
+    },
+    // {
+    //     "$unwind": "$allEchosWithDates"
+    // },
+    // {
+    //     "$unwind": "$allEchosWithDates.allDatesSaidUniqueToUserAndTitle"
+    // },
+    // {
+    //     "$group": {
+    //         "_id": {
+    //             "user": "$name",
+    //             "bin": {
+    //                 "$dateToString": {
+    //                     "format": "%Y-%m",
+    //                     "date": "$allEchosWithDates.allDatesSaidUniqueToUserAndTitle"
+    //                 }
+    //             }
+    //         },
+    //         "items": {
+    //             "$push": "$text"
+    //         }
+    //     }
+    // },
+    // {
+    //     "$project": {
+    //         "_id": false,
+    //         "user": "$_id.user",
+    //         "bin": "$_id.bin",
+    //         "messages": {
+    //             "$setUnion": [
+    //                 "$items",
+    //                 "$items"
+    //             ]
+    //         },
+    //         "totalEchoCount": {
+    //             "$size": "$items"
+    //         }
+    //     }
+    // },
+    // {
+    //     "$sort": {
+    //         "bin": 1,
+    //         "count": -1,
+    //         "name": 1
+    //     }
+    // }
+]
+
 //db.users.getIndexes()
 //db.users.aggregate(combined)
-db.users.aggregate(usersFavorOrdered)
+db.users.aggregate(test)
 
 
 // allEchosWithDate

@@ -5,6 +5,7 @@
 - `python -m venv env`
 - Locate appropriate active script in `Scripts`. (eg: `env\Scripts\activate.bat` for CMD or `env\Scripts\Activate.ps1` for PowerShell)
 - `pip install -r requirements.txt`
+- Copy `.env.sample`, name it `.env` and update the fields as needed
 - `python get_gold.py`
 
 ## What it does

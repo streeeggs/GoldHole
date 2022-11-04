@@ -2,8 +2,8 @@
   <div>
     <nav-template />
     <winner-card
-      :top="topOffenderData"
-      :charData="topOffenderHistory"
+      :top="topOffendersList"
+      :chartData="topOffendersDetail"
       title="Your Winners"
     />
     <top-chart
@@ -14,8 +14,8 @@
     />
     <user-table
       title="Recorded Wins"
-      :data="offenderData"
-      :loaded="offenderLoaded"
+      :data="messageData"
+      :loaded="messagesLoaded"
     />
     <!-- kill for now 
     <radar-chart
@@ -32,13 +32,8 @@
 
 <script>
 import UserService from "../service/UserService";
+import MessageService from "../service/MessageService";
 
-import {
-  objectToDataset,
-  // Kill for now
-  //coulmnToDataset,
-  mapUserDataResultToLine,
-} from "../components/dataMappingUtil";
 import TopChart from "../components/TopChart";
 import UserTable from "../components/UserTable";
 import NavTemplate from "../components/NavTemplate";
@@ -46,6 +41,7 @@ import WinnerCard from "../components/WinnerCard";
 // Kill for now
 //import RadarChart from "../components/RadarChart";
 import { userDateBins } from "../store/store";
+import { coulmnToDataset } from "../components/dataMappingUtil";
 
 export default {
   name: "OffendersView",
@@ -59,6 +55,7 @@ export default {
     //RadarChart,
   },
   userService: null,
+  messageService: null,
   watch: {
     "userDateBins.item": {
       handler(val) {
@@ -68,29 +65,28 @@ export default {
     },
   },
   async mounted() {
-    this.getTopOffenderMessagesFromApi();
-    this.getOffenderDataFromApi();
-    //this.getMessagesFromTopOffenderFromApi();
+    this.getTopOffenderMessagesFromApi(this.userDateBins.item);
+    this.getMessages();
     this.getTopOffenderByDateRange(this.userDateBins.item);
-    this.getTopOffenders(this.userDateBins.item);
   },
   methods: {
-    getOffenderDataFromApi() {
-      this.offenderLoaded = false;
+    getMessages() {
+      this.messagesLoaded = false;
       try {
-        this.userService.getUsers().then((data) => {
-          this.offenderData = data;
+        this.messageService.getMessages().then((data) => {
+          this.messageData = data;
         });
-        this.offenderLoaded = true;
+        this.messagesLoaded = true;
       } catch (e) {
         console.log(e);
       }
     },
-    getTopOffenderMessagesFromApi() {
+    getTopOffenderMessagesFromApi(dateRange) {
       this.topLoaded = false;
       try {
-        this.userService.getTopOffendersByMessage().then((data) => {
-          this.topData = objectToDataset(data["Count"]);
+        this.userService.getOffenderCount(dateRange).then((data) => {
+          data = data.slice(0, 30);
+          this.topData = coulmnToDataset(data, "user", "totalFavor");
           this.topData.datasets[0].backgroundColor = [
             "rgba(205, 175, 20, 0.4)",
           ];
@@ -101,50 +97,18 @@ export default {
         console.error(e);
       }
     },
-    // Kill for now
-    // getMessagesFromTopOffenderFromApi() {
-    //   this.hesLoaded = false;
-    //   try {
-    //     this.userService.getTopOffenderAndMessages().then((data) => {
-    //       this.hisData = coulmnToDataset(
-    //         data.slice(0, 10).sort(() => {
-    //           return 0.5 - Math.random();
-    //         }),
-    //         "Message",
-    //         "Count",
-    //         false,
-    //         true
-    //       );
-    //       this.hisData.datasets[0].backgroundColor = [
-    //         "rgba(205, 175, 20, 0.4)",
-    //       ];
-    //       this.hisData.datasets[0].label = "His influence is palpable";
-    //       this.hisData.datasets[0].pointHoverBackgroundColor = "white";
-    //       this.hisData.datasets[0].pointHoverBorderColor = "white";
-    //     });
-    //     this.hesLoaded = true;
-    //   } catch (e) {
-    //     console.error(e);
-    //   }
-    // },
     getTopOffenderByDateRange(dateRange) {
       this.historyLoaded = false;
       this.userService.getTopOffenderBinned(dateRange).then((data) => {
-        this.topOffenderHistory = mapUserDataResultToLine(data);
+        this.topOffendersDetail = data[0].perdate;
+        this.topOffendersList = data[0].totals.map((rec) => rec.name);
       });
       this.historyLoaded = true;
-    },
-    getTopOffenders(dateRange) {
-      // TODO: Properly load w/ own varible
-      this.dataLoaded = false;
-      this.userService.getTopOffenders(dateRange).then((data) => {
-        this.topOffenderData = data.map((rec) => rec.name);
-      });
-      this.dataLoaded = true;
     },
   },
   created() {
     this.userService = new UserService();
+    this.messageService = new MessageService();
   },
   data() {
     return {
@@ -171,12 +135,12 @@ export default {
         ],
       },
       topLoaded: false,
-      offenderLoaded: false,
+      messagesLoaded: false,
       historyLoaded: false,
       dataLoaded: false,
-      offenderData: [{}],
-      topOffenderData: [],
-      topOffenderHistory: {
+      messageData: [{}],
+      topOffendersList: [],
+      topOffendersDetail: {
         labels: [],
         datasets: [
           { label: "", data: [], borderColor: "rgba(205, 175, 20, 0.4)" },
