@@ -70,11 +70,15 @@ export const objectToDataset = (json, generate_colors = false) => {
  */
 export const mapUserDataResultToLine = (json) => {
   const dataSets = [];
-  for (let user of json) {
-    const data = [];
-    dataSets.push(new LineDataset(user, data));
+  const user = json.user;
+  // Need a set to ensure we have each possible x-axis date bin for each user we're creating a line for
+  let uniqueDates = new Set();
+  for (let date of json.dates) {
+    uniqueDates.add(date.date);
+    dataSets.push(new LineDataset(user, date.favor));
+    // TODO: figure out who's 1st 2nd and 3rd so you can give them their own colors
   }
-  return new LineChart(uniqueDates, dataSets);
+  return new LineChart([...uniqueDates], dataSets);
 };
 
 // Start of ugly string manip... TODO: Move to own file?

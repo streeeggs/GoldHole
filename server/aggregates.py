@@ -379,26 +379,37 @@ class Users:
                         },
                     ],
                     # TODO: Find a way to consolidate this into the above query instead of needing a seperate group for this
+                    # Issue is because we focus on the message text to get who said it first
+                    # Directly conflicts with grouping by date and user alone
                     # hate this shit
                     "perdate": [
+                        # unwind and pull out the array of messages done above
                         {"$unwind": "$messages"},
                         {"$project": {"details": "$messages.details"}},
                         {"$unwind": "$details"},
+                        # group by date and user while tallying a count of each grouping
                         {
                             "$group": {
                                 "_id": {"date": "$details.date", "user": "$_id.user"},
                                 "favor": {"$sum": 1},
                             }
                         },
+                        # group again just to make an array of dates per users TODO: could probably be done in prevoius step but w/e
                         {
-                            "$project": {
-                                "_id": False,
-                                "date": "$_id.date",
-                                "user": "$_id.user",
-                                "favor": "$favor",
+                            "$group": {
+                                "_id": {"user": "$_id.user"},
+                                "dates": {
+                                    "$push": {"date": "$_id.date", "favor": "$favor"}
+                                },
                             }
                         },
-                        {"$sort": {"date": 1, "favor": -1, "user": 1}},
+                        {
+                            "$project": {
+                                "_id": false,
+                                "user": "$_id.user",
+                                "dates": "$dates",
+                            }
+                        },
                     ],
                 }
             },
