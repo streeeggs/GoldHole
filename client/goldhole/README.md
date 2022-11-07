@@ -4,6 +4,7 @@
 
 ```
 npm install
+npm install --global serve OR npx serve (package.json assumes you have serve)
 ```
 
 Create a `.env.development.local` file with the `VUE_APP_API_URL` variable in it. Should point to your local instance of the API.

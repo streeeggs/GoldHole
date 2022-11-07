@@ -1,12 +1,24 @@
 <template>
-  <v-card class="pa-6 rounded-sm mx-12 my-12">
+  <v-card
+    class="pa-6 rounded-sm mx-12 my-12"
+    v-if="
+      chartData.datasets.some((d) =>
+        d.data.some((obj) => Object.getOwnPropertyNames(obj).length > 0)
+      )
+    "
+  >
     <v-card-title v-text="title" />
     <v-select
+      v-if="items"
       v-model="videoHistorySelection.item"
       :items="items"
       label="Look for others idk"
     />
-    <LineChartGenerator :chart-options="chartOptions" :chart-data="chartData" />
+    <LineChartGenerator
+      :chart-id="chartId"
+      :chart-options="chartOptions"
+      :chart-data="chartData"
+    />
   </v-card>
 </template>
 
@@ -14,7 +26,6 @@
 import { videoHistorySelection } from "../store/store";
 
 import { Line as LineChartGenerator } from "vue-chartjs/legacy";
-
 import {
   Chart as ChartJS,
   Title,
@@ -22,9 +33,10 @@ import {
   Legend,
   LineElement,
   LinearScale,
-  CategoryScale,
+  TimeScale,
   PointElement,
 } from "chart.js";
+import "chartjs-adapter-moment";
 
 ChartJS.register(
   Title,
@@ -32,7 +44,7 @@ ChartJS.register(
   Legend,
   LineElement,
   LinearScale,
-  CategoryScale,
+  TimeScale,
   PointElement
 );
 
@@ -53,12 +65,16 @@ export default {
       type: Object,
       required: true,
     },
+    chartId: {
+      type: String,
+      default: "discovery-line",
+    },
     title: {
       type: String,
       default: "",
     },
     items: {
-      default: () => [],
+      type: Array,
     },
   },
   data() {

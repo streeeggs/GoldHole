@@ -27,9 +27,6 @@ import {
   CategoryScale,
 } from "chart.js";
 
-const img = new Image();
-img.src = "https://media.giphy.com/media/YRcXl6VfNhCorklI0R/giphy.gif";
-
 ChartJS.register(Title, Tooltip, Legend, ArcElement, CategoryScale);
 
 export default {

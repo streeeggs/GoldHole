@@ -1,9 +1,9 @@
 <template>
   <v-card class="pa-6 rounded-sm mx-12 my-12">
     <v-card-title v-text="title" />
-    <v-row align="center" class="mx-0">
+    <v-row align="center" justify="center" class="mx-0" v-if="top.length > 0">
       <div
-        v-for="(user, i) in top"
+        v-for="(val, i) in top"
         :key="i"
         :class="rank[i]"
         class="d-flex justify-center align-center mb-6 pl-5 pr-5 pb-10"
@@ -18,23 +18,20 @@
         <div
           :class="'text-h' + (i + 1)"
           class="text-center text-lottery"
-          v-text="user"
+          v-text="val"
         ></div>
       </div>
     </v-row>
-    <v-row>
-      <discovery-line :chartData="chartData" />
+    <v-row v-else align="center" justify="center">
+      <div class="text-center text-h2">Mail-in votes are still ariving...</div>
     </v-row>
   </v-card>
 </template>
 
 <script>
-import DiscoveryLine from "../components/DiscoveryLine";
 export default {
   name: "WinnerCard",
-  components: {
-    DiscoveryLine,
-  },
+  components: {},
   props: {
     top: {
       type: Array,
@@ -66,44 +63,32 @@ export default {
 }
 
 .silver {
-  color: rgba(68, 68, 68, 0.4);
+  color: rgba(68, 68, 68, 0.6);
 }
 
 .bronze {
-  color: rgba(78, 32, 13, 0.4);
+  color: rgba(78, 32, 13, 0.6);
 }
 
 .text-lottery {
-  background: #222 -webkit-gradient(
-      linear,
-      left top,
-      right top,
-      from(#222),
-      to(#222),
-      color-stop(0.9, #fff)
-    ) 0 0 no-repeat;
-  animation: linear shine 3s infinite;
-  background-size: 30%;
+  background: linear-gradient(90deg, black, white, black);
+  background-repeat: no-repeat;
+  background-size: 80%;
+  animation: shine 7s linear infinite;
+
+  --webkit-background-clip: text;
+  --webkit-text-fill-color: transparent;
   background-clip: text;
   font-weight: bolder;
   text-shadow: 1px 1px #000000;
 }
 
 @keyframes shine {
-  0% {
-    background-position: 200%;
+  from {
+    background-position: 1000%;
   }
-  25% {
-    background-position: top right;
-  }
-  50% {
-    background-position: top;
-  }
-  75% {
-    background-position: top left;
-  }
-  100% {
-    background-position: -100%;
+  to {
+    background-position: -1000%;
   }
 }
 </style>

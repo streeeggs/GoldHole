@@ -1,32 +1,34 @@
 <template>
   <div>
     <nav-template />
-    <winner-card
-      :top="topOffendersList"
+    <v-card
+      class="pa-2 rounded-sm mx-auto sticky-card float-right"
+      maxWidth="500"
+    >
+      <v-select
+        v-model="userDateBins.item"
+        :items="dateBins"
+        label="Who won by..."
+      />
+    </v-card>
+    <winner-card :top="topOffendersList" title="Those to be followed" />
+    <discovery-line
       :chartData="topOffendersDetail"
-      title="Your Winners"
+      :chartOptions="byDateChartOptions"
+      title="By Date"
+      chart-id="ByDate"
     />
     <top-chart
-      :chart-data="topData"
+      :chartData="topData"
       :loaded="topLoaded"
       chart-id="topOffenders"
-      title="Total Ranking"
+      title="Where do the rest stand?"
     />
     <user-table
-      title="Recorded Wins"
+      title="Recorded Evidence"
       :data="messageData"
       :loaded="messagesLoaded"
     />
-    <!-- kill for now 
-    <radar-chart
-      :title="
-        'Anatomy of ' +
-        Object.keys(topData.datasets[0].data)[0] +
-        '\'s Contributions'
-      "
-      chart-id="anatomyofacriminal"
-      :chartData="hisData"
-    /> -->
   </div>
 </template>
 
@@ -38,10 +40,13 @@ import TopChart from "../components/TopChart";
 import UserTable from "../components/UserTable";
 import NavTemplate from "../components/NavTemplate";
 import WinnerCard from "../components/WinnerCard";
-// Kill for now
-//import RadarChart from "../components/RadarChart";
 import { userDateBins } from "../store/store";
-import { coulmnToDataset } from "../components/dataMappingUtil";
+import {
+  mapTopUserDataResultToBar,
+  mapUserDataResultToLine,
+} from "../components/dataMappingUtil";
+import DiscoveryLine from "../components/DiscoveryLine.vue";
+import { DATE_BINS, mapDateBinToTimescaleUnit } from "../components/enums";
 
 export default {
   name: "OffendersView",
@@ -51,26 +56,61 @@ export default {
     TopChart,
     NavTemplate,
     WinnerCard,
-    //Kill for now
-    //RadarChart,
+    DiscoveryLine,
   },
-  userService: null,
-  messageService: null,
   watch: {
     "userDateBins.item": {
       handler(val) {
         this.getTopOffenderByDateRange(val);
+        this.getTopOffenderMessagesFromApi(val);
+        this.getMessages();
       },
-      deep: true,
+      immediate: true,
     },
   },
-  async mounted() {
-    this.getTopOffenderMessagesFromApi(this.userDateBins.item);
-    this.getMessages();
-    this.getTopOffenderByDateRange(this.userDateBins.item);
+  computed: {
+    // TODO: Move into line chart component
+    byDateChartOptions() {
+      return {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          x: {
+            type: "time",
+            time: {
+              unit: mapDateBinToTimescaleUnit(this.userDateBins.item),
+            },
+            grid: {
+              color: "rgba(255, 255, 255, 0)",
+              borderColor: "rgba(255, 255, 255, 0)",
+              tickColor: "white",
+            },
+            ticks: {
+              color: "white",
+            },
+          },
+          y: {
+            grid: {
+              color: "rgba(255, 255, 255, 0.2)",
+              tickColor: "white",
+            },
+            ticks: {
+              color: "white",
+            },
+          },
+        },
+        plugins: {
+          legend: {
+            labels: {
+              color: "white",
+            },
+          },
+        },
+      };
+    },
   },
   methods: {
-    getMessages() {
+    async getMessages() {
       this.messagesLoaded = false;
       try {
         this.messageService.getMessages().then((data) => {
@@ -81,57 +121,37 @@ export default {
         console.log(e);
       }
     },
-    getTopOffenderMessagesFromApi(dateRange) {
+    async getTopOffenderMessagesFromApi(dateRange) {
       this.topLoaded = false;
       try {
         this.userService.getOffenderCount(dateRange).then((data) => {
-          data = data.slice(0, 30);
-          this.topData = coulmnToDataset(data, "user", "totalFavor");
-          this.topData.datasets[0].backgroundColor = [
-            "rgba(205, 175, 20, 0.4)",
-          ];
-          this.topData.datasets[0].label = "A culmination of effort quantified";
+          this.topData = mapTopUserDataResultToBar(data, [
+            "A culmination of efforts quantified",
+          ]);
         });
         this.topLoaded = true;
       } catch (e) {
         console.error(e);
       }
     },
-    getTopOffenderByDateRange(dateRange) {
+    async getTopOffenderByDateRange(dateRange) {
       this.historyLoaded = false;
       this.userService.getTopOffenderBinned(dateRange).then((data) => {
-        this.topOffendersDetail = data[0].perdate;
         this.topOffendersList = data[0].totals.map((rec) => rec.name);
+        this.topOffendersDetail = mapUserDataResultToLine(
+          data[0].perdate,
+          true
+        );
       });
       this.historyLoaded = true;
     },
   },
-  created() {
-    this.userService = new UserService();
-    this.messageService = new MessageService();
-  },
   data() {
     return {
       topData: {
+        labels: [],
         datasets: [
-          {
-            data: [],
-            label: "",
-            backgroundColor: [],
-            borderColor: [],
-            borderWidth: 1,
-          },
-        ],
-      },
-      hisData: {
-        datasets: [
-          {
-            data: [],
-            label: "",
-            backgroundColor: [],
-            borderColor: [],
-            borderWidth: 1,
-          },
+          { label: "", data: [], borderColor: "rgba(205, 175, 20, 0.4)" },
         ],
       },
       topLoaded: false,
@@ -147,7 +167,17 @@ export default {
         ],
       },
       userDateBins,
+      dateBins: DATE_BINS,
+      userService: new UserService(),
+      messageService: new MessageService(),
     };
   },
 };
 </script>
+<style scoped>
+.sticky-card {
+  position: sticky;
+  top: 50px;
+  z-index: 10;
+}
+</style>

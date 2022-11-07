@@ -383,18 +383,15 @@ class Users:
                     # Directly conflicts with grouping by date and user alone
                     # hate this shit
                     "perdate": [
-                        # unwind and pull out the array of messages done above
                         {"$unwind": "$messages"},
                         {"$project": {"details": "$messages.details"}},
                         {"$unwind": "$details"},
-                        # group by date and user while tallying a count of each grouping
                         {
                             "$group": {
                                 "_id": {"date": "$details.date", "user": "$_id.user"},
                                 "favor": {"$sum": 1},
                             }
                         },
-                        # group again just to make an array of dates per users TODO: could probably be done in prevoius step but w/e
                         {
                             "$group": {
                                 "_id": {"user": "$_id.user"},
@@ -405,11 +402,13 @@ class Users:
                         },
                         {
                             "$project": {
-                                "_id": false,
+                                "_id": False,
                                 "user": "$_id.user",
                                 "dates": "$dates",
+                                "totalFavor": {"$sum": "$dates.favor"},
                             }
                         },
+                        {"$sort": {"totalFavor": -1}},
                     ],
                 }
             },

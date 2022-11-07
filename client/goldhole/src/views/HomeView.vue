@@ -1,26 +1,19 @@
 <template>
-  <v-container fill-height fluid class="crt pa-0">
-    <v-img
-      height="100%"
-      aspect-ratio="4/3"
-      src="https://64.media.tumblr.com/1fca2ee6d20293fca99d7c55cb3a6bb6/tumblr_p4fo22QNUi1qzwoe1o1_1280.gifv"
-      class="align-center"
-    >
-      <v-row align="center" justify="center">
-        <v-col class="text-center" cols="12">
-          <v-img
-            :src="require('../assets/logo.png')"
-            id="headerLogo"
-            class="my-3 align-center justify-center"
-            max-height="100"
-            contain
-          />
-          <router-link class="link" to="/offenders">
-            <h1 id="headerLottery" class="subheading">Nice Ass</h1>
-          </router-link>
-        </v-col>
-      </v-row>
-    </v-img>
+  <v-container fill-height fluid class="crt pa-0 home-container">
+    <v-row align="center" justify="center">
+      <v-col class="text-center" cols="12">
+        <v-img
+          :src="require('../assets/logo.png')"
+          id="headerLogo"
+          class="my-3 align-center justify-center"
+          max-height="100"
+          contain
+        />
+        <router-link class="link" to="/offenders">
+          <h1 id="headerLottery" class="subheading">Nice Ass</h1>
+        </router-link>
+      </v-col>
+    </v-row>
   </v-container>
 </template>
 
@@ -260,5 +253,9 @@ export default {
   100% {
     background-position: 500px;
   }
+}
+
+.home-container {
+  background: center center/90rem no-repeat black url("../assets/home_bg.gif");
 }
 </style>

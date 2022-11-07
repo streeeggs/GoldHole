@@ -1,4 +1,4 @@
-import { LineChart, LineDataset } from "./ChartModels";
+import { BarChart, BarDataset, LineChart, LineDataset } from "./ChartModels";
 
 /*
  * Just need to map shit that comes back from the API to whatever chart.js expects
@@ -65,23 +65,59 @@ export const objectToDataset = (json, generate_colors = false) => {
 /**
  * Mapper for "/users that builds datasets for each user.
  * Result is for a LineChart.
- * @param {Object} json API response from date range user. Expects a shape of [{"date", "user", "favor"}]
+ * @param {Object} json API response from date range user. Expects a shape of [{"date", "user", "favor"}, ...]
  * @returns {LineChart}
  */
-export const mapUserDataResultToLine = (json) => {
+export const mapUserDataResultToLine = (json, accumulate = false) => {
   const dataSets = [];
-  const user = json.user;
-  // Need a set to ensure we have each possible x-axis date bin for each user we're creating a line for
-  let uniqueDates = new Set();
-  for (let date of json.dates) {
-    uniqueDates.add(date.date);
-    dataSets.push(new LineDataset(user, date.favor));
-    // TODO: figure out who's 1st 2nd and 3rd so you can give them their own colors
-  }
-  return new LineChart([...uniqueDates], dataSets);
+  json.forEach((userObj, idx) => {
+    let user = userObj.user;
+
+    // Probably need to sort since chart js will do some literal translation (string v string instead of date v date)
+    userObj.dates.sort((a, b) => {
+      const d1 = new Date(a.date);
+      const d2 = new Date(b.date);
+      return d1 - d2;
+    });
+
+    // Add up each previous favor... Probably a better way to do this but w/e
+    if (accumulate) {
+      let total = 0;
+      userObj.dates = userObj.dates.map((date) => {
+        total += date.favor;
+        return { date: date.date, favor: total };
+      });
+    }
+
+    let data = userObj.dates.map((date) => ({ x: date.date, y: date.favor }));
+    // Assumes array is in order for winnerArray[idx]
+    dataSets.push(new LineDataset(user, data, winnerArray[idx]));
+  });
+  return new LineChart(dataSets);
+};
+
+export const mapTopUserDataResultToBar = (json, labels) => {
+  if (json.length === 0) return new BarChart({});
+  const dataObj = {};
+  json.slice(0, 30).forEach((topObj) => {
+    dataObj[shortenLabel(topObj.user)] = topObj.totalFavor;
+  });
+
+  return new BarChart(
+    new BarDataset(dataObj, [gold], [gold_background], labels)
+  );
 };
 
 // Start of ugly string manip... TODO: Move to own file?
+
+/*
+  TODO: GET THIS IN THE ROOT CSS ALREADY
+*/
+const gold = "rgb(205, 175, 20";
+const gold_background = "rgba(205, 175, 20, 0.4)";
+const silver = "rgb(68, 68, 68";
+const bronze = "rgba(78, 32, 13)";
+const winnerArray = [gold, silver, bronze];
 
 const MAX_LABEL_LEN = 20;
 /**

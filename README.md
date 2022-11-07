@@ -21,7 +21,6 @@ _Long winded mainly to remind myself what the hell I built_
 - Uses Vue 2 with Vueitfy and vue-chartjs (chart.js fork)
   - Hard dep on Vue 2 due to [Vueitfy still working on Vue 3 integration](https://vuetifyjs.com/en/introduction/roadmap/#v30-titan)
   - Would love to try composition API eventually
-- Use node
 
 ## API / DB
 
@@ -41,17 +40,17 @@ _Long winded mainly to remind myself what the hell I built_
   - [ ] Optimize (possible memory leak? machine tends to lag really bad after allowing to run for a while)
   - [x] Environment variables for secrets
 - [ ] Fix UI build size (324.4kB JS chunk and 299.4kB CSS chunk)
-- [ ] Resolve UI dep vulnerabilities so depend-a-bot stops complaining
-- [ ] Make binned winners (week, month, year, all time)
+- [x] Resolve UI dep vulnerabilities so depend-a-bot stops complaining
+- [x] Make binned winners (week, month, year, all time)
   - [x] API aggregation for users (day, week, month, all time)
-  - [ ] Graphs to reflect with user control over bin
+  - [x] Graphs to reflect with user control over bin
 - [ ] 💸Stocks view💸
   - [ ] API aggregation for videos? and gold (binned + any stat cool math)
   - [ ] [Graphs](https://github.com/chartjs/chartjs-chart-financial)
 - [ ] [WordCloud](https://github.com/sgratzl/chartjs-chart-wordcloud) to replace stupid radar
 - [ ] Parse "gold emojis"
 - [x] API Caching
-- [ ] UI Caching
+- [x] UI Caching
 - [ ] API Authentication
 - [ ] Mock data
 - [ ] Unit tests
@@ -61,4 +60,6 @@ _Long winded mainly to remind myself what the hell I built_
 - [ ] Style layout
 - [ ] Style style style
 - [ ] Organize UI mapping and utilities
+  - [x] Organize Offender Mappers
+  - [ ] Organize/fix Video Mappers
 - [x] Organize API aggregates better
