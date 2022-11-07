@@ -8,7 +8,7 @@
       <v-select
         v-model="userDateBins.item"
         :items="dateBins"
-        label="Who won by..."
+        label="Show by..."
       />
     </v-card>
     <winner-card :top="topOffendersList" title="Those to be followed" />
