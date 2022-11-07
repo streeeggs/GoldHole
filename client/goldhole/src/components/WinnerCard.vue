@@ -1,57 +1,94 @@
 <template>
   <v-card class="pa-6 rounded-sm mx-12 my-12">
     <v-card-title v-text="title" />
-    <div class="text-h1 text-center lottery" v-text="top[0]"></div>
+    <v-row align="center" justify="center" class="mx-0" v-if="top.length > 0">
+      <div
+        v-for="(val, i) in top"
+        :key="i"
+        :class="rank[i]"
+        class="d-flex justify-center align-center mb-6 pl-5 pr-5 pb-10"
+      >
+        <v-img
+          :src="require(`../assets/${rank[i]}-bar.gif`)"
+          :max-height="100 - i * 20"
+          :max-width="100 - i * 20"
+          class="flex-grow-0"
+          contain
+        />
+        <div
+          :class="'text-h' + (i + 1)"
+          class="text-center text-lottery"
+          v-text="val"
+        ></div>
+      </div>
+    </v-row>
+    <v-row v-else align="center" justify="center">
+      <div class="text-center text-h2">Mail-in votes are still ariving...</div>
+    </v-row>
   </v-card>
 </template>
 
 <script>
 export default {
   name: "WinnerCard",
+  components: {},
   props: {
     top: {
       type: Array,
-      default: () => [],
+      default: () => ["Soon", "You'll", "See"],
+    },
+    chartData: {
+      type: Object,
+      default: () => {},
     },
     title: {
       type: String,
-      default: "Item of Interest:",
+      default: "Nothing here yet",
     },
+  },
+  data: function () {
+    return {
+      rank: ["gold", "silver", "bronze"],
+    };
   },
 };
 </script>
 
 <style scoped>
-.lottery {
-  background: #222 -webkit-gradient(
-      linear,
-      left top,
-      right top,
-      from(#222),
-      to(#222),
-      color-stop(0.9, #fff)
-    ) 0 0 no-repeat;
-  animation: shine 4s infinite;
-  background-size: 150px;
+/*
+  TODO: GET THIS IN THE ROOT CSS ALREADY
+*/
+.gold {
   color: rgba(205, 175, 20, 0.4);
+}
+
+.silver {
+  color: rgba(68, 68, 68, 0.6);
+}
+
+.bronze {
+  color: rgba(78, 32, 13, 0.6);
+}
+
+.text-lottery {
+  background: linear-gradient(90deg, black, white, black);
+  background-repeat: no-repeat;
+  background-size: 80%;
+  animation: shine 7s linear infinite;
+
+  --webkit-background-clip: text;
+  --webkit-text-fill-color: transparent;
   background-clip: text;
   font-weight: bolder;
   text-shadow: 1px 1px #000000;
 }
 
 @keyframes shine {
-  0%,
-  10% {
-    background-position: -500px;
+  from {
+    background-position: 1000%;
   }
-  20% {
-    background-position: top left;
-  }
-  90% {
-    background-position: top right;
-  }
-  100% {
-    background-position: 500px;
+  to {
+    background-position: -1000%;
   }
 }
 </style>

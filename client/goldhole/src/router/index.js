@@ -23,6 +23,11 @@ const routes = [
     name: "videos",
     component: () => import("../views/VideoView.vue"),
   },
+  {
+    path: "/stocks",
+    name: "stocks",
+    component: () => import("../views/GoldView.vue"),
+  },
 ];
 
 const router = new VueRouter({

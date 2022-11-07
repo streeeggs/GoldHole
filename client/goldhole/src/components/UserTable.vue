@@ -40,19 +40,19 @@ export default {
       search: "",
       users: [],
       headers: [
-        { text: "Favor", value: "Count" },
+        { text: "Favor", value: "favor" },
         {
           text: "Suspect",
           align: "start",
           sortable: true,
-          value: "Name",
+          value: "user",
         },
         {
           text: "Offense",
-          value: "Message",
+          value: "message",
         },
-        { text: "Action Recorded", value: "Date" },
-        { text: "Topic", value: "Title" },
+        { text: "Action Recorded", value: "date" },
+        { text: "Topic", value: "title" },
       ],
     };
   },

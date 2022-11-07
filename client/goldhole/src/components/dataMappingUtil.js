@@ -1,5 +1,7 @@
+import { BarChart, BarDataset, LineChart, LineDataset } from "./ChartModels";
+
 /*
- * Collection of functions to try and unify data from a pandas DF or straight from a JSONified PyMongoDB result
+ * Just need to map shit that comes back from the API to whatever chart.js expects
  * Also controls some common styling elements in shitty way since I'm currently styling each chart instead of styling globally
  * Probably best to have a seperate collection of functions to hanlde that or, you know, do it right with global styling
  */
@@ -56,22 +58,77 @@ export const objectToDataset = (json, generate_colors = false) => {
       },
     ],
   };
-  res.datasets[0].data = json; // TOOD: Function should be more agnostic to multiple datasets; not just one
+  res.datasets[0].data = json; // TODO: Function should be more agnostic to multiple datasets; not just one
   return res;
+};
+
+/**
+ * Mapper for "/users that builds datasets for each user.
+ * Result is for a LineChart.
+ * @param {Object} json API response from date range user. Expects a shape of [{"date", "user", "favor"}, ...]
+ * @returns {LineChart}
+ */
+export const mapUserDataResultToLine = (json, accumulate = false) => {
+  const dataSets = [];
+  json.forEach((userObj, idx) => {
+    let user = userObj.user;
+
+    // Probably need to sort since chart js will do some literal translation (string v string instead of date v date)
+    userObj.dates.sort((a, b) => {
+      const d1 = new Date(a.date);
+      const d2 = new Date(b.date);
+      return d1 - d2;
+    });
+
+    // Add up each previous favor... Probably a better way to do this but w/e
+    if (accumulate) {
+      let total = 0;
+      userObj.dates = userObj.dates.map((date) => {
+        total += date.favor;
+        return { date: date.date, favor: total };
+      });
+    }
+
+    let data = userObj.dates.map((date) => ({ x: date.date, y: date.favor }));
+    // Assumes array is in order for winnerArray[idx]
+    dataSets.push(new LineDataset(user, data, winnerArray[idx]));
+  });
+  return new LineChart(dataSets);
+};
+
+export const mapTopUserDataResultToBar = (json, labels) => {
+  if (json.length === 0) return new BarChart({});
+  const dataObj = {};
+  json.slice(0, 30).forEach((topObj) => {
+    dataObj[shortenLabel(topObj.user)] = topObj.totalFavor;
+  });
+
+  return new BarChart(
+    new BarDataset(dataObj, [gold], [gold_background], labels)
+  );
 };
 
 // Start of ugly string manip... TODO: Move to own file?
 
-const maxLabelLen = 30;
+/*
+  TODO: GET THIS IN THE ROOT CSS ALREADY
+*/
+const gold = "rgb(205, 175, 20";
+const gold_background = "rgba(205, 175, 20, 0.4)";
+const silver = "rgb(68, 68, 68";
+const bronze = "rgba(78, 32, 13)";
+const winnerArray = [gold, silver, bronze];
+
+const MAX_LABEL_LEN = 20;
 /**
  * Shorten a given label
  * @param {String} str
  * @returns Shorten label if over max length
  */
 const shortenLabel = (str) =>
-  str.length < maxLabelLen
+  str.length < MAX_LABEL_LEN
     ? str
-    : str.substring(0, str.lastIndexOf(" ", maxLabelLen));
+    : str.substring(0, str.lastIndexOf(" ", MAX_LABEL_LEN));
 
 const blue_dark = "rgba(91, 100, 222, 0.4)";
 const blue_light = "rgba(91, 192, 222, 0.4)";

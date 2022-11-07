@@ -1,5 +1,14 @@
 <template>
-  <v-card class="pa-6 rounded-sm mx-12 my-12">
+  <v-card
+    class="pa-6 rounded-sm mx-12 my-12"
+    v-if="
+      chartData.datasets.some(
+        (ds) =>
+          ds.data !== undefined &&
+          Object.getOwnPropertyNames(ds.data).length > 0
+      )
+    "
+  >
     <v-card-title v-text="title" />
     <Bar
       v-if="loaded"
@@ -63,7 +72,8 @@ export default {
       default: false,
     },
     chartData: {
-      default: () => {},
+      type: Object,
+      required: true,
     },
   },
   data() {
