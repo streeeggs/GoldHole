@@ -253,7 +253,7 @@ class DateBins(Enum):
     """Laughably bad date conversions. Just ignore it for now..."""
 
     WEEK = [
-        "%Y-%m-%d %w",
+        "%Y-%m-%d",
         datetime.combine(
             date.today() - timedelta(days=date.today().isoweekday() % 7),
             datetime.min.time(),
