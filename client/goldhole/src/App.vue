@@ -19,7 +19,7 @@ export default {
   name: "GoldHole",
   data: () => ({
     snackbar: true,
-    text: `Goldhole won't be updated between 2/4-2/11. Don't say anything worth recording until then.`,
+    text: `Goldhole wasn't updated between 2/4-2/11 but should be updating again now.`,
   }),
   // methods: {
   //   chooseBackground() {
