@@ -2,14 +2,6 @@
   <v-app>
     <v-main>
       <router-view />
-      <v-snackbar v-model="snackbar">
-        {{ text }}
-        <template v-slot:action="{ attrs }">
-          <v-btn color="gold" text v-bind="attrs" @click="snackbar = false">
-            Close
-          </v-btn>
-        </template>
-      </v-snackbar>
     </v-main>
   </v-app>
 </template>
@@ -17,10 +9,6 @@
 <script>
 export default {
   name: "GoldHole",
-  data: () => ({
-    snackbar: true,
-    text: `Goldhole wasn't updated between 2/4-2/11 but should be updating again now.`,
-  }),
   // methods: {
   //   chooseBackground() {
   //     this.background =
