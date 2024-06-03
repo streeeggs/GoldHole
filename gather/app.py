@@ -208,6 +208,7 @@ def get_gold():
         time.sleep(5)
 
         # messages: gets time stamp and text eg: ['[23:39:02]', 'better']]
+        # FIX: Fails here with "target closed". Try a different method of selecting text contents
         whole_gold_text = whole_gold.all_text_contents()
 
         # Add to the list

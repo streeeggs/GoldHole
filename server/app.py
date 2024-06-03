@@ -36,6 +36,7 @@ mongo = PyMongo(app)
 app.config.from_mapping(config)
 cache = Cache(app)
 
+
 ## Start Aggregates
 most_echo_by_title_aggregate = MostEchosByTitle().agg
 
@@ -50,6 +51,7 @@ count_by_video_aggregate = CountByVideoAggregate().agg
 sum_echo_by_title_aggregate = SumEchoByTitleAggregate().agg
 
 video_history_aggregate = VideoHistoryAggregate().agg
+
 
 # Wraper for make_response
 def success(json):
@@ -187,11 +189,12 @@ def videos_history(name):
 
 ## Users
 
+
 # I'm aware this isn't really binning; I guess interval, period, or date bounding are better terms
 @app.route("/users")
 @cache.cached(timeout=120, query_string=True)
 def users():
-    date_bin = request.args.get("date_bin") or "ALLTIME"
+    date_bin = request.args.get("date_bin") or "YEAR"
     limit = (
         int(request.args.get("limit"))
         if request.args.get("limit") is not None
@@ -207,7 +210,7 @@ def users():
 @app.route("/users/top")
 @cache.cached(timeout=120, query_string=True)
 def users_count():
-    date_bin = request.args.get("date_bin") or "ALLTIME"
+    date_bin = request.args.get("date_bin") or "YEAR"
     return success(dumps(mongo.db.users.aggregate(Users().favorPerUser(date_bin))))
 
 
@@ -215,5 +218,5 @@ def users_count():
 @app.route("/messages/list")
 @cache.cached(timeout=120, query_string=True)
 def messages():
-    date_bin = request.args.get("date_bin") or "ALLTIME"
+    date_bin = request.args.get("date_bin") or "YEAR"
     return success(dumps(mongo.db.users.aggregate(Users().messageList(date_bin))))

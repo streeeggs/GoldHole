@@ -2,80 +2,6 @@ def cool_js():
     return """
 console.log("=== starting custom js ===");
 
-// img scroll fix
-addChatMessage = function (data) {
-  if (IGNORED.indexOf(data.username) !== -1) {
-    return;
-  }
-  if (data.meta.shadow && !USEROPTS.show_shadowchat) {
-    return;
-  }
-  var msgBuf = $("#messagebuffer");
-  var div = formatChatMessage(data, LASTCHAT);
-  // Incoming: a bunch of crap for the feature where if you hover over
-  // a message, it highlights messages from that user
-  var safeUsername = data.username.replace(/[^\w-]/g, "\\$");
-  div.addClass("chat-msg-" + safeUsername);
-  div.appendTo(msgBuf);
-  div.mouseover(function () {
-    $(".chat-msg-" + safeUsername).addClass("nick-hover");
-  });
-  div.mouseleave(function () {
-    $(".nick-hover").removeClass("nick-hover");
-  });
-  var oldHeight = msgBuf.prop("scrollHeight");
-  var numRemoved = trimChatBuffer();
-  if (SCROLLCHAT) {
-    scrollChat();
-  } else {
-    var newMessageDiv = $("#newmessages-indicator");
-    if (!newMessageDiv.length) {
-      newMessageDiv = $("<div/>")
-        .attr("id", "newmessages-indicator")
-        .insertBefore($("#chatDragHandle"));
-      var bgHack = $("<span/>")
-        .attr("id", "newmessages-indicator-bghack")
-        .appendTo(newMessageDiv);
-
-      $("<span/>")
-        .addClass("glyphicon glyphicon-chevron-down")
-        .appendTo(bgHack);
-      $("<span/>").text("New Messages Below").appendTo(bgHack);
-      $("<span/>")
-        .addClass("glyphicon glyphicon-chevron-down")
-        .appendTo(bgHack);
-      newMessageDiv.click(function () {
-        SCROLLCHAT = true;
-        scrollChat();
-      });
-    }
-
-    if (numRemoved > 0) {
-      IGNORE_SCROLL_EVENT = true;
-      var diff = oldHeight - msgBuf.prop("scrollHeight");
-      scrollAndIgnoreEvent(msgBuf.scrollTop() - diff);
-    }
-  }
-
-  window.setTimeout(() => {
-    if (SCROLLCHAT) {
-      scrollChat();
-    } else if ($(this).position().top < 0) {
-      scrollAndIgnoreEvent(msgBuf.scrollTop() + $(this).height());
-    }
-  }, 100);
-
-  var isHighlight = false;
-  if (CLIENT.name && data.username != CLIENT.name) {
-    if (data.msg.toLowerCase().indexOf(CLIENT.name.toLowerCase()) != -1) {
-      div.addClass("nick-highlight");
-      isHighlight = true;
-    }
-  }
-
-  pingMessage(isHighlight);
-};
-
 if (!oldAppend) {
   var oldAppend = $.fn.appendTo;
 
@@ -91,8 +17,6 @@ if (!oldAppend) {
         var nameSpan = this.find("span:not(.timestamp):nth-last-child(2)");
         var jqueryChatSpan = $(chatSpan);
         var chatText = jqueryChatSpan.text().toLowerCase();
-
-        textLottery(chatText, jqueryChatSpan, this);
 
         allSpans.attr("data-text", chatText);
         // if(chatText.indexOf("coolhole") >= 0)
@@ -233,8 +157,8 @@ function checkReturnFire(jqueryChatSpan, chatText, chatDiv) {
       }
 
       if (killPrevChatMessage) {
-        var prevChat = chatDiv.prev();
-
+        var prevChat = chatDiv.prev("div[class*=chat-msg]");
+		
         if (prevChat.length > 0) {
           var victimGolds = prevChat.find("span.text-lottery").length;
 
@@ -259,69 +183,6 @@ function checkReturnFire(jqueryChatSpan, chatText, chatDiv) {
     }
   }, 10);
 }
-
-//this just hashes the
-function textLottery(chatText, jqueryChatSpan, everything) {
-  //temporarily in here
-  modSoy(jqueryChatSpan, jqueryChatSpan, everything);
-
-  //Check for the "currenttitle-content" first to calculate gold. If its not there (because they hid the video to show chat only), check the last active video in the queue.
-  //Also, apparently there can be more than 1 "active" video if you just hit 'play' on a video in the queue while there is a 'permanent' video still in the queue.
-  //This does break golds if there are multiple permanent videos in the queue AND they have the video turned off (because a 'permanent' flag does NOT remove
-  //the queue_active class from the video queue as it plays through the permanent videos)...oh well. Its good enough.
-  var currentVideoTitle = "";
-  var currentTitle = $("#currenttitle-content");
-
-  if(currentTitle.length === 1) {
-	currentVideoTitle = currentTitle.text();
-  } else {
-	//Check the 'active videos' in the queue, and grab the last found record
-	//Its 'last' to handle the common case when a mod makes the top video a 'permanent' and hit plays on a video below.
-	currentVideoTitle = $(".queue_active .qe_title").last().text();
-  }
-
-  var dateModifier = Math.floor((new Date().getUTCMonth() + 3)/3) + new Date().getUTCFullYear();
-//   var dateModifier = Math.floor((new Date("12/1/2022").getUTCMonth() + 3)/3) + new Date("12/1/2022").getUTCFullYear();
-  var lotteryText = chatText.toString() + currentVideoTitle + "co" + dateModifier.toString();
-  var lotteryHash = hashFunc(lotteryText);
-  lotteryHash %= 100;
-
-  lotteryHash = lotteryHash < 0 ? -lotteryHash : lotteryHash;
-
-  //1% chance idk
-  if (lotteryHash === 1) {
-    //if(true) {
-    jqueryChatSpan.addClass("text-lottery");
-  }
-
-  //var rand = Math.floor((Math.random()*25) % 25);
-  //var audio = null;
-  //if(rand == 0) {audio = new Audio('https://static.dontcodethis.com/sounds/cough1.mp3');audio.volume=0.1;}
-  //else if (rand == 1) {audio = new Audio('https://static.dontcodethis.com/sounds/cough2.wav');audio.volume=0.1;}
-  //else if (rand == 2) {audio = new Audio('https://static.dontcodethis.com/sounds/cough3.wav');audio.volume=0.1;}
-  //else if (rand == 3) {audio = new Audio('https://static.dontcodethis.com/sounds/popcorn.m4a');audio.volume=0.02;}
-  //else if (rand == 4) {audio = new Audio('https://static.dontcodethis.com/sounds/sniffing.mp3');audio.volume=0.1;}
-  //else if (rand == 5) {audio = new Audio('https://static.dontcodethis.com/sounds/sneeze.mp3');audio.volume=0.1;}
-
-  //if(audio !== null) {
-  //	audio.type = 'audio/wav';
-  //	audio.play();
-  //}
-}
-
-function hashFunc(str) {
-  var hash = 0,
-    i,
-    chr;
-  if (str.length === 0) return hash;
-  for (i = 0; i < str.length; i++) {
-    chr = str.charCodeAt(i);
-    hash = (hash << 5) - hash + chr;
-    hash |= 0; // Convert to 32bit integer
-  }
-  return hash;
-}
-
 
 //add title document.title changer
 if (!titleMutationObs) {
@@ -470,6 +331,35 @@ if (play) {
     myaudio.playbackRate = 1.0;
   }
 }
+
+/* Dumb Halloween Stuff */
+var today = new Date();
+var halloweenDate = new Date("10/31/2023");
+
+// Calculate the number of days until Halloween
+var daysUntilHalloween = Math.max(halloweenDate.getDate() - (today.getDate()), 0);
+
+// Width boundaries 
+var initialWidth = 4; 
+var maxWidth = 150;
+// Height boundaries 
+var initialHeight = 6;
+var maxHeight = 20;
+
+// Interval based on 7 days from when this was written
+var widthInterval = (maxWidth - initialWidth) / 7;
+var heightInterval = (maxHeight - initialHeight ) / 7;
+
+// Interval * number of days that have passed since a week ago, capping at Halloween
+// This is suppose to be "counting up" to Halloween so the numbers got larger as we got closer to Halloween
+var currWidth = Math.min(maxWidth, widthInterval * (7 - daysUntilHalloween) + initialWidth);
+var currHeight = Math.min(maxHeight, heightInterval * (7 - daysUntilHalloween) + initialHeight);
+
+// Update vars which are on the pseudo elements on body
+document.querySelectorAll('body')[0].style.setProperty("--skel-width", currWidth + "vw");
+document.querySelectorAll('body')[0].style.setProperty("--skel-height", currHeight + "vh");
+
+/* End dumb halloween stuff */
 
 console.log("=== ending custom js ===");
 """
