@@ -6,5 +6,5 @@ export const videoHistorySelection = reactive({
 });
 
 export const userDateBins = reactive({
-  item: "ALLTIME",
+  item: "YEAR",
 });

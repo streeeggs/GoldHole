@@ -11,10 +11,6 @@ export const DATE_BINS = [
     text: "Year",
     value: "YEAR",
   },
-  {
-    text: "All Time",
-    value: "ALLTIME",
-  },
 ];
 
 export const mapDateBinToTimescaleUnit = (datebin) => {
@@ -25,8 +21,6 @@ export const mapDateBinToTimescaleUnit = (datebin) => {
     case "MONTH":
       return "day";
     case "YEAR":
-      return "month";
-    case "ALLTIME":
       return "month";
   }
 };

@@ -264,8 +264,6 @@ class DateBins(Enum):
         datetime.combine(date.today().replace(day=1), datetime.min.time()),
     ]
     YEAR = ["%Y-%m", datetime(date.today().year, 1, 1)]
-    # Hard deadline of 5 years b/c fk u
-    ALLTIME = ["%Y-%m", datetime(date.today().year - 5, 1, 1)]
 
 
 class Users:
